@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="GuideTask" extends="Task">
+    <interface>
+        <field id="channels" type="array" />
+        <field id="status" type="string" />
+        <field id="complete" type="boolean" value="false" />
+        <field id="scheduleQueue" type="array" />
+        <field id="scheduleResult" type="assocarray" />
+    </interface>
+    <script type="text/brightscript" uri="pkg:/components/GuideTask.brs" />
+    <script type="text/brightscript" uri="pkg:/components/BroadcastEngine.brs" />
+</component>
