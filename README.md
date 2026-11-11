@@ -1,4 +1,4 @@
-﻿<p align="center"><img src="assets/icon.png" alt="Spelunkr TV Guide icon" width="112"></p>
+<p align="center"><img src="assets/icon.png" alt="Spelunkr TV Guide icon" width="112"></p>
 <h1 align="center">Spelunkr TV Guide</h1>
 <p align="center"><strong>Unofficial Roku app for the Spelunkr live channel lineup</strong></p>
 <p align="center">Live guide · Live preview · Channel directory · Version 1.6</p>
@@ -14,10 +14,10 @@ Spelunkr TV Guide puts [Spelunkr](https://spelunkr.tv/)'s always-on retro channe
 
 | Package | What you get | Download |
 | --- | --- | --- |
-| **Roku ZIP** | The sideloadable app; upload this ZIP directly to your Roku | [spelunkr-tv-guide-v1.6-roku.zip](https://github.com/snuffy420/Spelunkr-TV-Guide/releases/download/v1.6/spelunkr-tv-guide-v1.6-roku.zip) |
-| **Source 7z** | Editable BrightScript, artwork, build tools and documentation | [spelunkr-tv-guide-v1.6-source.7z](https://github.com/snuffy420/Spelunkr-TV-Guide/releases/download/v1.6/spelunkr-tv-guide-v1.6-source.7z) |
+| **Roku ZIP** | The sideloadable app; upload this ZIP directly to your Roku | [spelunkr-tv-guide-v1.6-roku.zip](https://github.com/snuffy420/SpelunkrTV-Roku/releases/download/v1.6/spelunkr-tv-guide-v1.6-roku.zip) |
+| **Source 7z** | Editable BrightScript, artwork, build tools and documentation | [spelunkr-tv-guide-v1.6-source.7z](https://github.com/snuffy420/SpelunkrTV-Roku/releases/download/v1.6/spelunkr-tv-guide-v1.6-source.7z) |
 
-Checksums sit beside both downloads on the [release page](https://github.com/snuffy420/Spelunkr-TV-Guide/releases/tag/v1.6). The source archive is for development; the Roku installer needs the Roku ZIP.
+Checksums sit beside both downloads on the [release page](https://github.com/snuffy420/SpelunkrTV-Roku/releases/tag/v1.6): [Roku ZIP SHA-256](https://github.com/snuffy420/SpelunkrTV-Roku/releases/download/v1.6/spelunkr-tv-guide-v1.6-roku.zip.sha256) and [source 7z SHA-256](https://github.com/snuffy420/SpelunkrTV-Roku/releases/download/v1.6/spelunkr-tv-guide-v1.6-source.7z.sha256). The source archive is for development; the Roku installer needs the Roku ZIP.
 
 ### Install on Roku
 
@@ -66,7 +66,7 @@ Playback depends on the program's current Internet Archive file. A stream downlo
 
 The source uses a fixed set of guide rows and directory cards, a single background worker for all listing downloads, and bundled pixel logos, so browsing stays responsive on low-end Roku models. [Build instructions](docs/BUILDING.md) cover packaging, the source archive and regenerating logos. [Release notes](CHANGELOG.md) describe each version.
 
-Spelunkr TV Guide's application code is licensed under [GPL-3.0](LICENSE). Spelunkr's names, logos, channel data and the videos it schedules keep their own terms. See [THIRD_PARTY.md](THIRD_PARTY.md).
+The full source lives in the [SpelunkrTV-Roku repository](https://github.com/snuffy420/SpelunkrTV-Roku) on GitHub; the source 7z above is the same tree packaged for offline editing. Spelunkr TV Guide's application code is licensed under [GPL-3.0](LICENSE). Spelunkr's names, logos, channel data and the videos it schedules keep their own terms. See [THIRD_PARTY.md](THIRD_PARTY.md).
 
 ## Support Spelunkr TV Guide
 
@@ -83,7 +83,7 @@ If Spelunkr TV Guide is useful to you, please consider supporting the people who
 Questions, feedback, a bug report or a custom build? Get in touch through the Spelunkr TV Guide contact form.
 
 <p align="center">
-  <a href="https://snuffy420.github.io/Spelunkr-TV-Guide/docs/contact.html">
+  <a href="https://snuffy420.github.io/SpelunkrTV-Roku/docs/contact.html">
     <img src="assets/contact-button.svg" alt="Contact the developer" width="260">
   </a>
 </p>
