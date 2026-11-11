@@ -70,12 +70,13 @@ Spelunkr TV Guide's application code is licensed under [GPL-3.0](LICENSE). Spelu
 
 ## Support Spelunkr TV Guide
 
-<img src="assets/bitcoin.svg" width="24" height="24" alt="Bitcoin">
+If Spelunkr TV Guide is useful to you, please consider supporting the people who make it possible. Donations are optional and appreciated.
 
-If Spelunkr TV Guide is useful to you, consider supporting its development with a Bitcoin donation. Donations are optional and appreciated.
+1. **Internet Archive:** every program plays from Internet Archive. [Donate to Internet Archive](https://archive.org/donate)
+2. **Spelunkr:** the channels, schedules and station breaks come from Spelunkr. [Tip Spelunkr on Ko-fi](https://ko-fi.com/spelunkrtv)
+3. **This Roku app:** support its development with a Bitcoin donation.
 
-**Bitcoin (BTC):**
-`bc1qz8877p6vusc22qrctdj4h7w0uk2l9l9h8lwphy`
+   **Bitcoin (BTC):** <img src="assets/bitcoin.svg" width="20" height="20" alt="Bitcoin" align="absmiddle"> `bc1qz8877p6vusc22qrctdj4h7w0uk2l9l9h8lwphy`
 
 ## Contact
 
