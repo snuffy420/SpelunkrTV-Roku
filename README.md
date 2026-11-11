@@ -80,10 +80,10 @@ If Spelunkr TV Guide is useful to you, please consider supporting the people who
 
 ## Contact
 
-Questions, feedback, a bug report or a custom build? Get in touch through the developer contact form.
+Questions, feedback, a bug report or a custom build? Get in touch through the Spelunkr TV Guide contact form.
 
 <p align="center">
-  <a href="https://snuffy420.github.io/zer0TV/docs/contact.html">
+  <a href="https://snuffy420.github.io/Spelunkr-TV-Guide/docs/contact.html">
     <img src="assets/contact-button.svg" alt="Contact the developer" width="260">
   </a>
 </p>
