@@ -283,8 +283,9 @@ end sub
 
 function spelunkrTransfer(url as String) as Object
     transfer = CreateObject("roUrlTransfer")
+    ' Public HTTPS only needs the CA bundle. InitClientCertificates() is
+    ' deprecated and was never needed here (no client-certificate servers).
     transfer.SetCertificatesFile("common:/certs/ca-bundle.crt")
-    transfer.InitClientCertificates()
     transfer.EnableEncodings(true)
     transfer.AddHeader("Accept", "application/json")
     transfer.AddHeader("User-Agent", "SpelunkrRoku/1.0")

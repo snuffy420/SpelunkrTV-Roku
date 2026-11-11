@@ -33,6 +33,8 @@ sub init()
     m.dirRenderedPage = -1
     m.dirViews = []
     m.pendingTuneId = ""
+    m.pendingDeepLink = invalid
+    m.launchSignaled = false
     m.nowTitle = m.top.FindNode("nowTitle")
     m.nowDescription = m.top.FindNode("nowDescription")
     m.nowMeta = m.top.FindNode("nowMeta")
@@ -143,6 +145,7 @@ sub onGuideReady()
     channels = m.task.channels
     if type(channels) <> "roArray" or channels.Count() = 0
         m.status.Text = m.task.status
+        signalLaunchComplete()
         return
     end if
     m.channels = channels
@@ -162,6 +165,62 @@ sub onGuideReady()
     m.active = true
     showChannel(0, true)
     requestSchedules()
+    signalLaunchComplete()
+    if m.pendingDeepLink <> invalid then applyDeepLink()
+end sub
+
+' Certification 3.2: fired once, when the guide is usable (or shows its load error).
+sub signalLaunchComplete()
+    if m.launchSignaled = true then return
+    m.launchSignaled = true
+    m.top.signalBeacon("AppLaunchComplete")
+end sub
+
+' Deep links (certification 5.2): contentId is a channel id ("primetime") or a
+' dial number ("8", "08", "300"). The channel plays full screen. A link that
+' arrives before the lineup has loaded waits for it.
+sub onDeepLink()
+    link = m.top.deepLink
+    if type(link) <> "roAssociativeArray" then return
+    m.pendingDeepLink = link
+    if m.active then applyDeepLink()
+end sub
+
+sub applyDeepLink()
+    link = m.pendingDeepLink
+    m.pendingDeepLink = invalid
+    if link = invalid then return
+    index = deepLinkIndex(LCase(link.contentId))
+    if index < 0
+        print "Deep link: no channel for contentId "; link.contentId
+        return
+    end if
+    if m.directoryOpen then closeDirectory()
+    if m.fullscreen then exitFullscreen()
+    m.pendingTuneId = ""
+    showChannel(index, true)
+    requestSchedules()
+    tuneInFullscreen(index)
+end sub
+
+function deepLinkIndex(contentId as String) as Integer
+    if m.channelIndexById.DoesExist(contentId) then return m.channelIndexById[contentId]
+    dial = Val(contentId)
+    if dial <= 0 then return -1
+    for index = 0 to m.channels.Count() - 1
+        if Val(m.channels[index].dial) = dial then return index
+    end for
+    return -1
+end function
+
+' A low-memory warning from Main: drop the preview stream while it is not what
+' the viewer is watching. The guide restarts it on the next channel change.
+sub onLowMemory()
+    if m.fullscreen then return
+    m.previewTimer.Control = "stop"
+    m.previewPending = false
+    stopPreview()
+    showStatic()
 end sub
 
 sub showChannel(index as Integer, preview as Boolean)
@@ -1216,7 +1275,11 @@ sub selectDirectoryChannel(index as Integer, tuneIn as Boolean)
     closeDirectory()
     showChannel(index, true)
     requestSchedules()
-    if not tuneIn then return
+    if tuneIn then tuneInFullscreen(index)
+end sub
+
+' Plays the channel full screen now, or as soon as its listings arrive.
+sub tuneInFullscreen(index as Integer)
     channel = m.channels[index]
     refreshChannelSchedule(channel)
     if channel.now <> invalid

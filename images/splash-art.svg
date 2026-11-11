@@ -21,6 +21,6 @@
   <rect x="270" y="225" width="1380" height="630" rx="8" fill="url(#panel)" stroke="#3157a5" stroke-width="8"/>
   <text x="960" y="690" text-anchor="middle" fill="#fff12d" stroke="#14153a" stroke-width="3" paint-order="stroke" font-family="Arial, sans-serif" font-weight="700" font-size="104">Spelunkr</text>
   <text x="960" y="770" text-anchor="middle" fill="#fff12d" stroke="#14153a" stroke-width="2" paint-order="stroke" font-family="Arial, sans-serif" font-weight="700" font-size="54">TV Guide</text>
-  <text x="960" y="820" text-anchor="middle" fill="#e8eaf0" font-family="Arial, sans-serif" font-size="30">v1.6</text>
+  <text x="960" y="820" text-anchor="middle" fill="#e8eaf0" font-family="Arial, sans-serif" font-size="30">v1.7</text>
   <rect x="0" y="105" width="1920" height="3" fill="#586bb9"/>
 </svg>

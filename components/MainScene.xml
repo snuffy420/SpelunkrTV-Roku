@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <component name="MainScene" extends="Scene">
-    <interface />
+    <interface>
+        <field id="deepLink" type="assocarray" onChange="onDeepLink" alwaysNotify="true" />
+        <field id="lowMemory" type="boolean" onChange="onLowMemory" alwaysNotify="true" />
+    </interface>
     <script type="text/brightscript" uri="pkg:/components/MainScene.brs" />
     <children>
         <Group id="guideBack">

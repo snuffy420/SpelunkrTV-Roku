@@ -1,4 +1,4 @@
-# Building Spelunkr TV Guide 1.6
+# Building Spelunkr TV Guide 1.7
 
 ## Roku ZIP
 
@@ -8,7 +8,7 @@ Python 3.12 or newer is enough to package the app:
 python tools/package.py
 ```
 
-Output: `releases/spelunkr-tv-guide-v1.6-roku.zip` and its SHA-256 sidecar. The ZIP holds `manifest`, `source`, `components` and `images` at its root; SVG/GIF sources, docs and tools are left out. The version comes from `manifest`.
+Output: `releases/spelunkr-tv-guide-v1.7-roku.zip` and its SHA-256 sidecar. The ZIP holds `manifest`, `source`, `components` and `images` at its root; SVG/GIF sources, docs and tools are left out. The version comes from `manifest`.
 
 ## Source archive
 
