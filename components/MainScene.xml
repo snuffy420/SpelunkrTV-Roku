@@ -101,7 +101,7 @@
             <Label id="playerTime" text="" translation="[1040,608]" width="190" height="25" horizAlign="right" font="font:SmallBoldSystemFont" color="0x00CCDDEE" />
             <Rectangle id="playerProgressTrack" translation="[48,640]" width="1180" height="8" color="0x27334FFF" />
             <Rectangle id="playerProgressFill" translation="[48,640]" width="1" height="8" color="0xFFD740FF" />
-            <Label id="playerHints" text="UP / DOWN  CHANNEL  ·  LEFT / RIGHT  10 SEC  ·  OK OR BACK  GUIDE" translation="[48,658]" width="1180" height="24" font="font:SmallSystemFont" color="0xC7D2F2FF" />
+            <Label id="playerHints" text="UP / DOWN  CHANNEL  ·  PLAY  PAUSE  ·  LEFT / RIGHT  10 SEC  ·  OK OR BACK  GUIDE" translation="[48,658]" width="1180" height="24" font="font:SmallSystemFont" color="0xC7D2F2FF" />
         </Group>
     </children>
 </component>

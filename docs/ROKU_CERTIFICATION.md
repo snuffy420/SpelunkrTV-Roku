@@ -19,6 +19,15 @@ Roku's Static Analysis flagged these on the Spelunkr TV Guide 1.6 upload (Novemb
 | 6–10 | `EnableLowGeneralMemoryEvent`, `EnableMemoryWarningEvent`, `GetChannelAvailableMemory`, `GetChannelMemoryLimit`, `GetMemoryLimitPercent` usage not found | In `Main`: `roAppMemoryMonitor` gets `EnableMemoryWarningEvent` and the three `Get…` calls; **`EnableLowGeneralMemoryEvent` goes on `roDeviceInfo`** (its events arrive as `roDeviceInfoEvent` with `generalMemoryLevel`). Calling it on `roAppMemoryMonitor` halts `Main` in the debugger, so the guide draws but nothing loads (seen in the first 1.7 test on Roku OS 16.0.4). All of these calls sit in `try`/`catch`. On a warning the scene releases the preview stream unless the viewer is watching full screen. |
 | 11 | Fire `AppDialogInitiate` / `AppDialogComplete` if a dialog shows before the home page | Not needed: Spelunkr shows no dialog before the guide. An app that shows a login, EULA, profile picker or other dialog before its home screen must fire both beacons around it. |
 
+## Device tests (Channel Store upload of 1.7.1)
+
+| Test | Result | Cause and fix |
+| --- | --- | --- |
+| Channel Content Play Performance (3.6) | Fail | The test plays the registered deep link and Roku times the video start. Measured on a Roku TV: `primetime` took **14.1 s** (`VODStartComplete`), `homeroom` **5.5 s**. Before the first frame the player downloads the MP4 index (`moov`), and PRIMETIME's 3–5 hour tapes carry 2.8–29 MB indexes (12 MB average) against HOMEROOM's 0.2–1.2 MB. **Register `homeroom` (mediaType Live) as the deep-link parameter**, not `primetime`. HAPPY TREES (max 2.3 MB) is a good second choice. |
+| Screensaver Policy (4.5) | Error | Full screen ignored Pause, so a deep-linked stream never stopped and the screensaver could not start. 1.7.2 adds Play/Pause in full screen; 1.7.1 added the idle timeout on the guide. |
+
+Measure video start yourself from the debug console (`telnet ROKU_IP 8085`) while sending a deep link; look for `VODStartComplete ---> Duration(…)`.
+
 ## Testing deep links
 
 With the dev app sideloaded, from a computer on the same network:

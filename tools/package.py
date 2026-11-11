@@ -12,6 +12,10 @@ def version():
     manifest = open(os.path.join(ROOT, "manifest"), encoding="utf-8").read()
     major = re.search(r"major_version=(\d+)", manifest).group(1)
     minor = re.search(r"minor_version=(\d+)", manifest).group(1)
+    build = re.search(r"build_version=(\d+)", manifest)
+    # A patch release (build_version > 0) is named 1.7.1; otherwise 1.7.
+    if build and int(build.group(1)) > 0:
+        return f"{major}.{minor}.{int(build.group(1))}"
     return f"{major}.{minor}"
 
 

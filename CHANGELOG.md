@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.7.2 - November 11, 2026
+
+- Add Play/Pause while watching full screen. A paused picture lets the Roku screensaver start (screensaver policy, 4.5). Resume rejoins the live broadcast; if the program changed while paused, the new one opens. Changing channel or leaving full screen clears the pause.
+- Show PAUSED on the playback banner and add PLAY PAUSE to the full-screen hints.
+- Show 1.7.2 on the splash screen.
+
+## 1.7.1 - November 11, 2026
+
+- Screensaver policy: after 5 minutes with no remote input on the guide, the live preview stops and shows "PREVIEW PAUSED · PRESS ANY BUTTON", so the Roku screensaver can start. The first button press only wakes the preview. Full-screen playback and the directory are unaffected.
+- Show 1.7.1 on the splash screen; packages are named `v1.7.1`.
+
 ## 1.7 - November 11, 2026
 
 Roku Channel Store certification fixes.

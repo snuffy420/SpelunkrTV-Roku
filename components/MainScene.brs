@@ -35,6 +35,13 @@ sub init()
     m.pendingTuneId = ""
     m.pendingDeepLink = invalid
     m.launchSignaled = false
+    ' Screensaver policy: after this long with no remote input on the guide, the
+    ' preview stops so the Roku screensaver can start. Full screen is unaffected.
+    m.idleSeconds = 300
+    m.lastInputSec = 0
+    m.idlePaused = false
+    ' Play/Pause in full screen. A paused video lets the Roku screensaver start.
+    m.userPaused = false
     m.nowTitle = m.top.FindNode("nowTitle")
     m.nowDescription = m.top.FindNode("nowDescription")
     m.nowMeta = m.top.FindNode("nowMeta")
@@ -165,6 +172,7 @@ sub onGuideReady()
     m.active = true
     showChannel(0, true)
     requestSchedules()
+    m.lastInputSec = currentEpochSeconds()
     signalLaunchComplete()
     if m.pendingDeepLink <> invalid then applyDeepLink()
 end sub
@@ -195,6 +203,8 @@ sub applyDeepLink()
         print "Deep link: no channel for contentId "; link.contentId
         return
     end if
+    m.lastInputSec = currentEpochSeconds()
+    if m.idlePaused then resumeIdlePreview(false)
     if m.directoryOpen then closeDirectory()
     if m.fullscreen then exitFullscreen()
     m.pendingTuneId = ""
@@ -215,6 +225,26 @@ end function
 
 ' A low-memory warning from Main: drop the preview stream while it is not what
 ' the viewer is watching. The guide restarts it on the next channel change.
+' Screensaver policy (idle guide): stop the preview and its static so no video or
+' animation keeps the Roku screensaver away. Guide listings keep updating.
+sub pauseIdlePreview()
+    m.idlePaused = true
+    m.previewTimer.Control = "stop"
+    m.previewPending = false
+    stopPreview()
+    hideStatic()
+    m.previewVideo.Visible = false
+    m.previewBadgeText.Text = "PREVIEW PAUSED  ·  PRESS ANY BUTTON"
+    m.previewBadge.Visible = true
+end sub
+
+sub resumeIdlePreview(restart as Boolean)
+    m.idlePaused = false
+    m.previewBadge.Visible = false
+    m.previewVideo.Visible = true
+    if restart and not m.fullscreen and not m.directoryOpen then showChannel(m.currentIndex, true)
+end sub
+
 sub onLowMemory()
     if m.fullscreen then return
     m.previewTimer.Control = "stop"
@@ -663,6 +693,7 @@ end sub
 
 ' Says what the static means, so a slow stream is not mistaken for a broken one.
 sub updateTuningBadge(nowSec as Integer)
+    if m.idlePaused and not m.fullscreen then return
     if m.fullscreen or m.staticFading or not m.previewStatic.Visible
         m.previewBadge.Visible = false
         return
@@ -682,6 +713,7 @@ sub updateTuningBadge(nowSec as Integer)
 end sub
 
 sub updateBreakCard(channel as Object)
+    if m.idlePaused then return
     if channel.now = invalid then return
     if channel.now.kind <> "card" then return
     elapsedMs = channel.elapsed * 1000
@@ -754,6 +786,7 @@ sub renderPlaybackBanner()
     if position < 0 then position = 0
     if position > duration then position = duration
     m.playerTime.Text = spelunkrDuration(position) + "  /  " + spelunkrDuration(duration)
+    if m.userPaused then m.playerTime.Text = "PAUSED"
     fill = 1
     if duration > 0 then fill = Int(1180 * position / duration)
     if fill < 1 then fill = 1
@@ -839,6 +872,9 @@ end sub
 ' same airing leaves the stream alone. A new stream is always opened at the live
 ' point worked out now, so a show never restarts from an old position.
 sub startPreview(channel as Object)
+    if m.idlePaused and not m.fullscreen then return
+    ' Stay paused across a program change; resume picks up the new airing.
+    if m.userPaused and m.fullscreen then return
     refreshChannelSchedule(channel)
     key = airingKey(channel)
     if key = ""
@@ -921,7 +957,37 @@ sub enterFullscreen()
     showPlaybackBanner()
 end sub
 
+' Play/Pause while watching. Resume rejoins the live broadcast: the same file
+' seeks to the live point; a program that changed while paused opens fresh.
+sub togglePause()
+    if m.userPaused
+        resumePlayback()
+    else if m.previewHasStream
+        m.userPaused = true
+        m.previewVideo.control = "pause"
+        m.driftCheckAt = 0
+    end if
+    showPlaybackBanner()
+end sub
+
+sub resumePlayback()
+    if not m.userPaused then return
+    m.userPaused = false
+    channel = m.channels[m.currentIndex]
+    refreshChannelSchedule(channel)
+    if not m.previewHasStream or airingKey(channel) <> m.previewKey
+        m.previewKey = ""
+        startPreview(channel)
+        return
+    end if
+    m.previewVideo.control = "resume"
+    m.userSeeked = false
+    m.previewSeekFixes = 0
+    m.driftCheckAt = currentEpochSeconds() + 2
+end sub
+
 sub exitFullscreen()
+    resumePlayback()
     m.fullscreen = false
     m.playbackBannerTimer.Control = "stop"
     m.playerBanner.Visible = false
@@ -961,6 +1027,7 @@ sub fullscreenChannelStep(delta as Integer)
     if count < 2 then return
     target = (m.currentIndex + delta + count) mod count
     m.pendingTuneId = ""
+    m.userPaused = false
     stopPreview()
     showStatic()
     showChannel(target, false)
@@ -973,6 +1040,12 @@ end sub
 
 function onKeyEvent(key as String, press as Boolean) as Boolean
     if not press then return false
+    m.lastInputSec = currentEpochSeconds()
+    if m.idlePaused
+        ' Like a screensaver, the first press only wakes the preview.
+        resumeIdlePreview(true)
+        return true
+    end if
     if m.directoryOpen then return onDirectoryKey(key)
     if m.fullscreen
         if key = "back" or key = "OK"
@@ -990,6 +1063,8 @@ function onKeyEvent(key as String, press as Boolean) as Boolean
                 m.previewVideo.seek = target
             end if
             showPlaybackBanner()
+        else if key = "play"
+            togglePause()
         else if key = "up"
             fullscreenChannelStep(1)
         else if key = "down"
@@ -1319,6 +1394,9 @@ sub onTick()
             end for
         end if
         return
+    end if
+    if not m.fullscreen and not m.idlePaused and m.lastInputSec > 0
+        if nowSec - m.lastInputSec >= m.idleSeconds then pauseIdlePreview()
     end if
     channel = m.channels[m.currentIndex]
     refreshChannelSchedule(channel)
