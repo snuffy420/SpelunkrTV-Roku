@@ -3,6 +3,7 @@ sub init()
 end sub
 
 sub loadSpelunkrGuide()
+    publishCharWidths()
     base = "https://data.spelunkr.tv/"
     m.top.status = "Loading live lineup..."
     lineup = spelunkrJson(base + "lineup.json")
@@ -44,6 +45,26 @@ sub loadSpelunkrGuide()
     m.top.complete = true
 end sub
 
+' Font metrics are only available off the render thread, so the scene gets a
+' table of character widths in the system font at size 22, keyed by code point.
+sub publishCharWidths()
+    try
+        font = CreateObject("roFontRegistry").GetDefaultFont(22, false, false)
+        if font = invalid then return
+        widths = {}
+        codes = [183, 233, 8211, 8212, 8216, 8217, 8220, 8221, 8230]
+        for code = 32 to 126
+            codes.Push(code)
+        end for
+        for each code in codes
+            widths[code.ToStr()] = font.GetOneLineWidth(Chr(code), 1000)
+        end for
+        m.top.charWidths = widths
+    catch problem
+        print "Character widths unavailable: "; problem.message
+    end try
+end sub
+
 function spelunkrIsDirectoryChannel(channelId as Dynamic, directoryIds as Object) as Boolean
     if type(channelId) <> "String" and type(channelId) <> "roString" then return false
     for each directoryId in directoryIds
@@ -62,18 +83,30 @@ sub runScheduleWorker()
     m.platforms = {}
     m.elapsedTimer = CreateObject("roTimespan")
     m.nextBackgroundMs = 0
+    m.loadedCount = 0
+    m.cachedCount = 0
+    m.outbox = []
     m.top.ObserveField("scheduleQueue", m.port)
     ' The scene may have queued its first request before this thread got here.
     workerReplaceQueue(m.top.scheduleQueue)
+    ' One bad request must never end listing updates for the whole app, so each
+    ' turn of the loop catches and logs its own errors.
     while true
-        workerStartRequests()
-        message = Wait(250, m.port)
-        if type(message) = "roSGNodeEvent"
-            workerReplaceQueue(message.GetData())
-        else if type(message) = "roUrlEvent"
-            workerHandleResponse(message)
-        end if
-        workerExpireRequests()
+        try
+            workerStartRequests()
+            message = Wait(250, m.port)
+            if type(message) = "roSGNodeEvent"
+                workerReplaceQueue(message.GetData())
+            else if type(message) = "roUrlEvent"
+                workerHandleResponse(message)
+            end if
+            workerExpireRequests()
+            workerFlush()
+        catch problem
+            print "Listings worker error: "; problem.message
+            ' Drop the request that failed so the queue keeps moving.
+            if m.queue.Count() > 0 then m.queue.Shift()
+        end try
     end while
 end sub
 
@@ -119,11 +152,22 @@ end function
 sub workerStartRequests()
     while m.queue.Count() > 0
         entry = m.queue[0]
-        limit = 1
-        if entry.priority then limit = 3
+        ' Listings already built on an earlier launch need no network at all.
+        ' The request comes off the queue first: answering it from the cache
+        ' queues more work (descriptions, server lookups) at the front, and
+        ' removing it afterwards took one of those instead, so the request was
+        ' answered again and again and nothing ever reached the screen.
+        if entry.kind = "manifest" or entry.kind = "details"
+            m.queue.Shift()
+            if entry.kind = "manifest" then hit = workerUseCachedSchedule(entry) else hit = workerUseCachedDetails(entry)
+            if hit then continue while
+            m.queue.Unshift(entry)
+        end if
+        ' Downloads overlap with building the previous channel's listings; the
+        ' background still leaves room for the video and the remote.
+        limit = 2
+        if entry.priority then limit = 4
         if m.inFlight.Count() >= limit then return
-        ' Background channels fill in one at a time with a gap, so prefetching
-        ' never competes with the video decoder or the remote.
         if not entry.priority and m.elapsedTimer.TotalMilliseconds() < m.nextBackgroundMs then return
         m.queue.Shift()
         url = entry.manifest
@@ -133,7 +177,7 @@ sub workerStartRequests()
         if transfer.AsyncGetToString()
             m.inFlight[transfer.GetIdentity().ToStr()] = {transfer: transfer, entry: entry, startedMs: m.elapsedTimer.TotalMilliseconds()}
         else
-            m.top.scheduleResult = {id: entry.id, ok: false}
+            workerEmit({id: entry.id, ok: false})
         end if
     end while
 end sub
@@ -145,7 +189,11 @@ sub workerHandleResponse(event as Object)
     m.inFlight.Delete(key)
     succeeded = event.GetInt() = 1 and event.GetResponseCode() >= 200 and event.GetResponseCode() < 300
     if entry.kind = "details"
-        if succeeded then workerPublishDescriptions(entry, ParseJson(event.GetString()))
+        if succeeded
+            text = event.GetString()
+            workerPublishDescriptions(entry, ParseJson(text))
+            WriteAsciiFile(workerCachePath("details", entry.manifest), text)
+        end if
     else if entry.kind = "resolve"
         if succeeded then workerResolveStep(entry, ParseJson(event.GetString()))
     else
@@ -157,19 +205,127 @@ sub workerHandleResponse(event as Object)
                     now = CreateObject("roDateTime")
                     nowSec = now.AsSeconds()
                     now.ToLocalTime()
-                    windowStartSec = nowSec - now.GetMinutes() * 60 - now.GetSeconds()
-                    result = workerBuildSchedule(manifest, entry, nowSec, windowStartSec, windowStartSec + 21600)
+                    hourStartSec = nowSec - now.GetMinutes() * 60 - now.GetSeconds()
+                    windowEndSec = hourStartSec + 21600
+                    ' From an hour before this hour: the guide shows half an hour of
+                    ' past and REW can look back to the start of the previous hour.
+                    windowStartSec = hourStartSec - 3600
+                    ' A delayed viewer needs listings from before this hour (up to a day).
+                    if entry.fromSec <> invalid
+                        if entry.fromSec < windowStartSec and entry.fromSec > nowSec - 90000 then windowStartSec = entry.fromSec
+                    end if
+                    result = workerBuildSchedule(manifest, entry, nowSec, windowStartSec, windowEndSec)
                 end if
             end if
         end if
         if result = invalid then result = {id: entry.id, ok: false}
-        m.top.scheduleResult = result
+        workerEmit(result)
         if result.ok
+            if entry.fromSec = invalid then workerSaveSchedule(entry, result, windowStartSec, windowEndSec)
             workerQueueDetails(entry, result.events)
             workerQueueResolves(entry, result.events)
+            workerCountLoaded(false)
         end if
     end if
-    m.nextBackgroundMs = m.elapsedTimer.TotalMilliseconds() + 400
+    m.nextBackgroundMs = m.elapsedTimer.TotalMilliseconds() + 150
+end sub
+
+' Results go to the scene in one batch per pass of the worker loop. Setting a
+' field many times in a row from this thread loses all but the last value on
+' the render thread, which is how 34 of 35 cached channels went missing.
+sub workerEmit(result as Object)
+    m.outbox.Push(result)
+end sub
+
+sub workerFlush()
+    if m.outbox.Count() = 0 then return
+    ' Batches at least 100 ms apart, so two in quick succession cannot merge
+    ' either; what waits goes in the next pass (the loop wakes every 250 ms).
+    nowMs = m.elapsedTimer.TotalMilliseconds()
+    if m.lastFlushMs <> invalid
+        if nowMs - m.lastFlushMs < 100 then return
+    end if
+    m.lastFlushMs = nowMs
+    m.top.scheduleBatch = m.outbox
+    m.outbox = []
+end sub
+
+' ---- Listings cache ------------------------------------------------------------
+' Built listings are kept in cachefs: per channel, the schedule version they
+' came from and the window they cover. A relaunch within about an hour and a
+' half reuses them with no download, parse or broadcast replay. Program
+' descriptions are kept by their versioned file name.
+
+function workerCachePath(kind as String, key as Dynamic) as String
+    if type(key) <> "String" and type(key) <> "roString" then return "cachefs:/spelunkr-none.json"
+    safe = key.Replace("/", "_").Replace(":", "_")
+    return "cachefs:/spelunkr-" + kind + "-" + safe + ".json"
+end function
+
+' Reads a cache file, or "" when there is none (checked first, so a miss does
+' not print a firmware error for every channel).
+function workerReadCache(path as String) as String
+    if m.fileSystem = invalid then m.fileSystem = CreateObject("roFileSystem")
+    if not m.fileSystem.Exists(path) then return ""
+    return ReadAsciiFile(path)
+end function
+
+function workerUseCachedSchedule(entry as Object) as Boolean
+    if entry.fromSec <> invalid then return false
+    text = workerReadCache(workerCachePath("sched", entry.id))
+    if text = "" then return false
+    cached = ParseJson(text)
+    if type(cached) <> "roAssociativeArray" then return false
+    if cached.version <> entry.version or cached.epochSec <> entry.epochSec or cached.startIndex <> entry.startIndex then return false
+    now = CreateObject("roDateTime")
+    nowSec = now.AsSeconds()
+    now.ToLocalTime()
+    hourStartSec = nowSec - now.GetMinutes() * 60 - now.GetSeconds()
+    ' Must cover the half hour of past on screen and four and a half hours ahead.
+    if cached.windowStartSec > nowSec - 2400 or cached.windowEndSec < hourStartSec + 16200 then return false
+    result = cached.result
+    if type(result) <> "roAssociativeArray" or type(result.events) <> "roArray" then return false
+    workerEmit(result)
+    workerQueueDetails(entry, result.events)
+    workerQueueResolves(entry, result.events)
+    workerCountLoaded(true)
+    ' Shown from cache at once, then rebuilt from the live data in the
+    ' background, which also saves a fresh copy for next time.
+    ' Once per channel per launch; after that, the hourly updates rebuild it
+    ' whenever the cached window runs short.
+    if m.refreshQueued = invalid then m.refreshQueued = {}
+    if not m.refreshQueued.DoesExist(entry.id)
+        m.refreshQueued[entry.id] = true
+        refresh = {}
+        refresh.Append(entry)
+        refresh.kind = "refresh"
+        refresh.priority = false
+        m.queue.Push(refresh)
+    end if
+    return true
+end function
+
+sub workerSaveSchedule(entry as Object, result as Object, windowStartSec as Integer, windowEndSec as Integer)
+    cached = {version: entry.version, epochSec: entry.epochSec, startIndex: entry.startIndex, windowStartSec: windowStartSec, windowEndSec: windowEndSec, result: result}
+    WriteAsciiFile(workerCachePath("sched", entry.id), FormatJson(cached))
+end sub
+
+function workerUseCachedDetails(entry as Object) as Boolean
+    text = workerReadCache(workerCachePath("details", entry.manifest))
+    if text = "" then return false
+    details = ParseJson(text)
+    if type(details) <> "roAssociativeArray" then return false
+    workerPublishDescriptions(entry, details)
+    return true
+end function
+
+' One line in the log once every channel has listings, to measure load time.
+sub workerCountLoaded(fromCache as Boolean)
+    m.loadedCount = m.loadedCount + 1
+    if fromCache then m.cachedCount = m.cachedCount + 1
+    if m.loadedCount = m.top.channelCount
+        print "All listings loaded: "; m.loadedCount; " channels in "; m.elapsedTimer.TotalMilliseconds(); " ms ("; m.cachedCount; " from cache)"
+    end if
 end sub
 
 ' Website timing first. A failure in it must never cost the channel its listings,
@@ -223,9 +379,18 @@ sub workerQueueResolves(entry as Object, events as Object)
         if event.startSec + event.duration > now and event.url <> ""
             identifier = spelunkrArchiveIdentifier(event.url)
             if identifier <> "" and not m.resolved.DoesExist(identifier)
-                m.resolved[identifier] = true
-                request = {kind: "resolve", id: identifier, step: "server", server: "", priority: entry.priority, manifest: "https://archive.org/metadata/" + identifier.EncodeUriComponent() + "/server"}
-                if entry.priority then m.queue.Unshift(request) else m.queue.Push(request)
+                ' Server and folder are independent lookups, so both go out together.
+                m.resolved[identifier] = {server: "", dir: ""}
+                base = "https://archive.org/metadata/" + identifier.EncodeUriComponent()
+                serverRequest = {kind: "resolve", id: identifier, step: "server", priority: entry.priority, manifest: base + "/server"}
+                dirRequest = {kind: "resolve", id: identifier, step: "dir", priority: entry.priority, manifest: base + "/dir"}
+                if entry.priority
+                    m.queue.Unshift(dirRequest)
+                    m.queue.Unshift(serverRequest)
+                else
+                    m.queue.Push(serverRequest)
+                    m.queue.Push(dirRequest)
+                end if
                 queued = queued + 1
             end if
         end if
@@ -236,11 +401,15 @@ sub workerResolveStep(entry as Object, answer as Dynamic)
     if type(answer) <> "roAssociativeArray" then return
     value = spelunkrText(answer.result)
     if value = "" then return
+    parts = m.resolved[entry.id]
+    if type(parts) <> "roAssociativeArray" then return
     if entry.step = "server"
-        request = {kind: "resolve", id: entry.id, step: "dir", server: value, priority: entry.priority, manifest: "https://archive.org/metadata/" + entry.id.EncodeUriComponent() + "/dir"}
-        if entry.priority then m.queue.Unshift(request) else m.queue.Push(request)
+        parts.server = value
     else if Left(value, 1) = "/"
-        m.top.scheduleResult = {id: "", resolved: [{identifier: entry.id, base: "https://" + entry.server + value}]}
+        parts.dir = value
+    end if
+    if parts.server <> "" and parts.dir <> ""
+        workerEmit({id: "", resolved: [{identifier: entry.id, base: "https://" + parts.server + parts.dir}]})
     end if
 end sub
 
@@ -266,7 +435,7 @@ sub workerPublishDescriptions(entry as Object, details as Dynamic)
             end if
         end if
     end for
-    if descriptions.Count() > 0 then m.top.scheduleResult = {id: entry.id, ok: true, descriptions: descriptions}
+    if descriptions.Count() > 0 then workerEmit({id: entry.id, ok: true, descriptions: descriptions})
 end sub
 
 sub workerExpireRequests()
@@ -276,7 +445,7 @@ sub workerExpireRequests()
         if nowMs - request.startedMs > 10000
             request.transfer.AsyncCancel()
             m.inFlight.Delete(key)
-            if request.entry.kind = "manifest" then m.top.scheduleResult = {id: request.entry.id, ok: false}
+            if request.entry.kind = "manifest" then workerEmit({id: request.entry.id, ok: false})
         end if
     end for
 end sub

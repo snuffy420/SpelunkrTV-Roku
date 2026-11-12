@@ -26,7 +26,7 @@
         <Animation id="staticAnimation" duration="0.64" repeat="true" easeFunction="linear">
             <Vector2DFieldInterpolator key="[0.0,0.0624,0.0625,0.1249,0.125,0.1874,0.1875,0.2499,0.25,0.3124,0.3125,0.3749,0.375,0.4374,0.4375,0.4999,0.5,0.5624,0.5625,0.6249,0.625,0.6874,0.6875,0.7499,0.75,0.8124,0.8125,0.8749,0.875,0.9374,0.9375,1.0]" keyValue="[[0,0],[0,0],[-374,0],[-374,0],[-748,0],[-748,0],[-1122,0],[-1122,0],[0,-210],[0,-210],[-374,-210],[-374,-210],[-748,-210],[-748,-210],[-1122,-210],[-1122,-210],[0,-420],[0,-420],[-374,-420],[-374,-420],[-748,-420],[-748,-420],[-1122,-420],[-1122,-420],[0,-630],[0,-630],[-374,-630],[-374,-630],[-748,-630],[-748,-630],[-1122,-630],[-1122,-630]]" fieldToInterp="staticSheet.translation" />
         </Animation>
-        <Animation id="staticFade" duration="0.8" repeat="false" easeFunction="linear">
+        <Animation id="staticFade" duration="0.45" repeat="false" easeFunction="linear">
             <FloatFieldInterpolator key="[0.0,1.0]" keyValue="[1.0,0.0]" fieldToInterp="previewStatic.opacity" />
         </Animation>
         <Rectangle id="previewBadge" translation="[95,272]" width="374" height="32" color="0x060B1ECC" visible="false">
@@ -41,36 +41,58 @@
             <Rectangle id="previewInfoEdge" translation="[548,78]" width="3" height="278" color="0x4A5AAAFF" />
             <Rectangle id="infoRightEdge" translation="[1245,78]" width="3" height="278" color="0x4A5AAAFF" />
             <Poster id="channelPixelLogo" translation="[566,88]" width="32" height="32" loadDisplayMode="scaleToFit" />
-            <Label id="channelName" text="" translation="[608,88]" width="620" height="28" font="font:MediumBoldSystemFont" color="0xFFD740FF" />
-            <Rectangle id="nowRule" translation="[566,168]" width="650" height="2" color="0x2A3580FF" />
-            <Label id="nowLabel" text="NOW PLAYING" translation="[566,174]" width="220" height="21" font="font:SmallBoldSystemFont" color="0xFFD740FF" />
-            <Label id="nowTitle" text="" translation="[566,196]" width="650" height="30" wrap="true" maxLines="1" font="font:MediumSystemFont" color="0xE8EAF0FF" />
-            <Label id="nowDescription" text="" translation="[566,226]" width="650" height="36" wrap="true" maxLines="2" font="font:SmallSystemFont" color="0xE8EAF0FF" />
-            <Label id="nowMeta" text="" translation="[566,263]" width="650" height="19" font="font:SmallSystemFont" color="0x00CCDDEE" />
-            <Rectangle id="progressTrack" translation="[566,285]" width="650" height="7" color="0x060B1EFF" />
-            <Rectangle id="progressFill" translation="[566,285]" width="1" height="7" color="0xFFD740FF" />
-            <Label id="nextTitle" text="" translation="[566,298]" width="650" height="54" wrap="true" maxLines="2" font="font:SmallSystemFont" color="0xE8EAF0FF" />
+            <Label id="channelName" text="" translation="[608,88]" width="400" height="28" font="font:MediumBoldSystemFont" color="0xFFD740FF" />
+            <Label id="nowLabel" text="NOW PLAYING" translation="[1016,92]" width="200" height="21" horizAlign="right" font="font:SmallBoldSystemFont" color="0xFFD740FF" />
+            <Rectangle id="nowRule" translation="[566,124]" width="650" height="2" color="0x2A3580FF" />
+            <Label id="nowTitle" text="" translation="[566,129]" width="650" height="30" wrap="true" maxLines="1" font="font:MediumSystemFont" color="0xE8EAF0FF" />
+            <Label id="nowDescription" text="" translation="[566,160]" width="650" height="112" wrap="true" maxLines="4" font="font:SmallSystemFont" color="0xE8EAF0FF" />
+            <Label id="nowMeta" text="" translation="[566,272]" width="650" height="19" font="font:SmallSystemFont" color="0x00CCDDEE" />
+            <Rectangle id="progressTrack" translation="[566,294]" width="650" height="7" color="0x060B1EFF" />
+            <Rectangle id="progressFill" translation="[566,294]" width="1" height="7" color="0xFFD740FF" />
+            <Label id="nextTitle" text="" translation="[566,304]" width="650" height="52" wrap="true" maxLines="2" font="font:SmallSystemFont" color="0xE8EAF0FF" />
 
             <Rectangle id="guideHeader" translation="[32,358]" width="1216" height="28" color="0x0A1040FF" />
             <Label id="section" text="CHANNEL" translation="[48,360]" width="306" height="24" horizAlign="center" font="font:SmallBoldSystemFont" color="0xFFD740FF" />
-            <Label id="guideTimes" text="" translation="[354,360]" width="297" height="24" horizAlign="center" font="font:SmallBoldSystemFont" color="0xFFD740FF" />
-            <Label id="guideNextHeading" text="" translation="[651,360]" width="297" height="24" horizAlign="center" font="font:SmallBoldSystemFont" color="0xFFD740FF" />
-            <Label id="guideThirdHeading" text="" translation="[948,360]" width="297" height="24" horizAlign="center" font="font:SmallBoldSystemFont" color="0xFFD740FF" />
+            <!-- Half-hour headings scroll with the listings (buildTimeStrip in MainScene.brs). -->
+            <Group id="headerClip" translation="[48,358]" clippingRect="[306,0,891,28]">
+                <Group id="headerStrip" />
+            </Group>
             <Rectangle id="listPanel" translation="[32,386]" width="1216" height="296" color="0x1B2868FF" />
             <Rectangle id="listEdge" translation="[32,356]" width="3" height="326" color="0x4A5AAAFF" />
             <Rectangle id="listRightEdge" translation="[1245,356]" width="3" height="326" color="0x4A5AAAFF" />
-            <Group id="guideRows" translation="[48,394]">
-                <Rectangle id="selectionBar" width="1197" height="35" color="0xA64310FF" />
-                <!-- Hour dividers: axis starts at 306, 297px per hour, ends at 1197 (the panel's right edge). -->
-                <Rectangle translation="[305,0]" width="1" height="280" color="0x7788BB66" />
-                <Rectangle translation="[603,0]" width="1" height="280" color="0x7788BB66" />
-                <Rectangle translation="[900,0]" width="1" height="280" color="0x7788BB66" />
-                <Group id="rowContent" />
-                <Rectangle id="selectionEdge" width="1197" height="2" color="0xFFD740FF" />
+            <!-- Eight rows show; a ninth waits below for Scan mode's roll. -->
+            <Group id="guideRows" translation="[48,394]" clippingRect="[0,0,1197,280]">
+                <Group id="rollGroup">
+                    <Rectangle id="selectionBar" width="1197" height="35" color="0xA64310FF" />
+                    <Group id="rowContent" />
+                    <!-- Listings: one strip that slides left under a fixed 3-hour window
+                         (axis 306..1197, 297 px per hour). Cell backgrounds, the now line,
+                         then titles, so the line never covers text. -->
+                    <Group id="stripClip" clippingRect="[306,0,891,315]">
+                        <Group id="stripBg" />
+                        <Group id="lineStrip">
+                            <Rectangle id="nowLine" width="2" height="315" color="0xFFD740E6" />
+                        </Group>
+                        <Group id="stripText" />
+                    </Group>
+                    <Rectangle id="selectionEdge" width="1197" height="2" color="0xFFD740FF" />
+                </Group>
             </Group>
 
-            <Label id="remoteHints" text="UP / DOWN  CHANNEL   ·   LEFT / RIGHT  PAGE   ·   OK  WATCH" translation="[44,688]" width="735" height="22" font="font:SmallestSystemFont" color="0xE8EAF0FF" />
-            <Label id="status" text="" translation="[784,688]" width="300" height="22" horizAlign="right" font="font:SmallSystemFont" color="0x00CCDDEE" />
+            <!-- The footer holds only the button hints, so they always read in full;
+                 status messages sit in the header, left of the clock. -->
+            <!-- Button hints: remote-button icons and a word each (buildHintRows). -->
+            <Group id="remoteHints" translation="[44,685]" />
+            <Label id="status" text="" translation="[560,26]" width="440" height="26" horizAlign="right" vertAlign="center" font="font:SmallSystemFont" color="0x00CCDDEE" />
+            <!-- SCAN button: Play/Pause in the guide starts the rolling Scan mode. -->
+            <Group id="scanButton" translation="[938,685]">
+                <Rectangle width="152" height="30" color="0x14153AFF" />
+                <Rectangle id="scanFaceTop" translation="[2,2]" width="148" height="13" color="0x2B2FC4FF" />
+                <Rectangle id="scanFaceBottom" translation="[2,15]" width="148" height="13" color="0x2226A0FF" />
+                <Poster id="scanIcon" translation="[22,8]" width="8" height="14" uri="pkg:/images/arrow-right.png" blendColor="0xFFFFFFFF" />
+                <Label text="SCAN" translation="[12,1]" width="152" height="30" horizAlign="center" vertAlign="center" font="font:SmallBoldSystemFont" color="0x14153AFF" />
+                <Label text="SCAN" translation="[11,0]" width="152" height="30" horizAlign="center" vertAlign="center" font="font:SmallBoldSystemFont" color="0xFFFFFFFF" />
+            </Group>
             <!-- DIRECTORY button, styled after the site's nav tab. The * (Options) key opens it. -->
             <Group id="directoryButton" translation="[1096,685]">
                 <Rectangle width="152" height="30" color="0x14153AFF" />
@@ -90,18 +112,30 @@
             <Label id="directoryTitle" text="directory" translation="[44,82]" width="200" height="34" vertAlign="center" font="font:LargeBoldSystemFont" color="0xFFE22EFF" />
             <Label text="every channel on the dial, in dial order, and what is on each one right now." translation="[214,82]" width="1020" height="34" vertAlign="center" font="font:SmallSystemFont" color="0xB9B0E8FF" />
             <Group id="directoryCards" />
-            <Label text="ARROWS  CHOOSE   ·   OK  SELECT   ·   REW / FF  PAGE   ·   BACK  GUIDE" translation="[44,688]" width="900" height="22" font="font:SmallestSystemFont" color="0xE8EAF0FF" />
+            <Group id="directoryHints" translation="[44,685]" />
             <Label id="directoryPage" text="" translation="[1000,688]" width="236" height="22" horizAlign="right" font="font:SmallSystemFont" color="0x00CCDDEE" />
         </Group>
 
         <Group id="playerBanner" visible="false">
             <Rectangle id="playerInfoBar" translation="[24,565]" width="1232" height="132" color="0x07112BEE" />
-            <Label id="playerChannel" text="" translation="[48,579]" width="1180" height="28" font="font:MediumBoldSystemFont" color="0xFFD740FF" />
+            <Poster id="playerLogo" translation="[48,578]" width="30" height="30" loadDisplayMode="scaleToFit" />
+            <Label id="playerChannel" text="" translation="[88,579]" width="1140" height="28" font="font:MediumBoldSystemFont" color="0xFFD740FF" />
             <Label id="playerTitle" text="" translation="[48,608]" width="1000" height="25" font="font:SmallBoldSystemFont" color="0xE8EAF0FF" />
             <Label id="playerTime" text="" translation="[1040,608]" width="190" height="25" horizAlign="right" font="font:SmallBoldSystemFont" color="0x00CCDDEE" />
             <Rectangle id="playerProgressTrack" translation="[48,640]" width="1180" height="8" color="0x27334FFF" />
             <Rectangle id="playerProgressFill" translation="[48,640]" width="1" height="8" color="0xFFD740FF" />
-            <Label id="playerHints" text="UP / DOWN  CHANNEL  ·  PLAY  PAUSE  ·  LEFT / RIGHT  10 SEC  ·  OK OR BACK  GUIDE" translation="[48,658]" width="1180" height="24" font="font:SmallSystemFont" color="0xC7D2F2FF" />
+            <Group id="playerHints" translation="[48,656]" />
+        </Group>
+
+        <!-- Playback options (OK in full screen). Item labels are built in MainScene.brs. -->
+        <Group id="syncPanel" translation="[270,150]" visible="false">
+            <Rectangle width="740" height="420" color="0x07112BF4" />
+            <Rectangle width="740" height="3" color="0xFFD740FF" />
+            <Label id="syncTitle" text="" translation="[28,16]" width="684" height="30" font="font:MediumBoldSystemFont" color="0xFFD740FF" />
+            <Label id="syncSubtitle" text="" translation="[28,50]" width="684" height="60" wrap="true" maxLines="2" font="font:SmallSystemFont" color="0xC7D2F2FF" />
+            <Rectangle id="syncHighlight" translation="[14,114]" width="712" height="36" color="0xA64310FF" />
+            <Group id="syncItems" translation="[28,114]" />
+            <Group id="syncHints" translation="[28,378]" />
         </Group>
     </children>
 </component>

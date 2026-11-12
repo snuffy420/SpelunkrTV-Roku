@@ -1,6 +1,6 @@
 # Roku certification checklist
 
-Roku's Static Analysis flagged these on the Spelunkr TV Guide 1.6 upload (November 2026). They are fixed in 1.7. Every zer0TV build has the same code-level issues, so use this list for those apps too.
+Roku's Static Analysis flagged these on the Spelunkr TV Guide 1.6 upload (November 2026). They are fixed in 1.7; 1.9.2 keeps every fix. Every zer0TV build has the same code-level issues, so use this list for those apps too.
 
 ## Errors (block publishing)
 
@@ -27,6 +27,12 @@ Roku's Static Analysis flagged these on the Spelunkr TV Guide 1.6 upload (Novemb
 | Screensaver Policy (4.5) | Error | Full screen ignored Pause, so a deep-linked stream never stopped and the screensaver could not start. 1.7.2 adds Play/Pause in full screen; 1.7.1 added the idle timeout on the guide. |
 
 Measure video start yourself from the debug console (`telnet ROKU_IP 8085`) while sending a deep link; look for `VODStartComplete ---> Duration(…)`.
+
+## Roku player limit on some tapes
+
+Found while testing 1.8 on a Roku TV (Roku OS 16.0.4). Seven SATURDAY MORNING tapes (YouCut edits, CN Saturday mornings 2009-2011) use a video timescale of 1,000,000 ticks per second, so their 4-5 hour lengths need a 64-bit duration. The Roku player keeps only the lower 32 bits and treats each tape as much shorter: it cannot open the file, or jump in it, past that point (36:26 into the Feb. '11 tape, 50:20 into Dec. '10 Vol. 2; both matched the prediction to the second). Playing straight through the point works. The errors are `-3 sample number too large` and `-5 malformed data / demux get sample error`.
+
+Since 1.9.2 the app catches those errors, works the limit out from the tape's length, reopens the tape a few seconds before it and marks playback **OUT OF SYNC**. OK in full screen offers what happens next (back to live at the next program, finish this program, or stay delayed through the lineup). Normal tapes are not affected; their timescales (12,000-60,000) leave room for 20+ hours.
 
 ## Testing deep links
 

@@ -1,5 +1,40 @@
 # Changelog
 
+## 1.9.2 - November 12, 2026
+
+### A guide that moves with the clock
+
+- The listings scroll with time: a yellow now line stays half an hour into the three-hour window while the listings and half-hour time headings creep left, one whole pixel at a time (about every 12 seconds), so text stays sharp. A small yellow marker shows the now line in the time header.
+- REW / FF in the guide look back or ahead half an hour per press, with a short glide. The header shows the time range being viewed; after 10 seconds without a time key the guide glides back to now. Scrolling channels while looking ahead keeps the time view.
+- A program that started before the window shows its title from the window's left edge, after a small arrow, like the old cable guide channels.
+- The now line splits every row: everything that has aired, left of it, is shaded darker, and everything still to come is bright. All programs share one color, so nothing to the right of the line looks dimmed.
+- Time labels show only when they fit whole; the partial columns at the window's edges keep their divider and listings.
+- The guide is one continuous list that wraps round, with no pages and no empty rows: 02 sits right under 600. Up/Down past the top or bottom row scroll the list one channel; Left/Right move it eight channels.
+
+### Scan
+
+- Play/Pause in the guide starts Scan: the listings roll up one channel every 4 seconds through the whole lineup, and every 45 seconds the channel at the top is featured in the preview and info panel, like the SCAN button on an old TV. The SCAN button in the footer turns orange and shows pause while it is on, and goes back to blue with play when it stops.
+- Up/Down and Left/Right scroll by hand and pause the roll for 10 seconds; OK watches the featured channel; Play/Pause again or Back ends Scan. Scan stops after 4 hours without a button press.
+
+### Easier to read
+
+- Back-to-back short shows (under about 10 minutes) draw as one cell with the first title, the number of shows and their total time. RUBBER HOSE (400) no longer shows a row of empty boxes.
+- Smaller program titles and running times, so more of each title fits.
+- Info panel: NOW PLAYING sits beside the channel name; the description gets up to four lines and UP NEXT two.
+- Directory and info panel text is measured and sized to fit its box, so long channel descriptions and NOW PLAYING titles show in full instead of ending in "...".
+- The button hints along the bottom of the guide, directory, full screen and playback options are remote-button icons styled after the Roku remote (purple direction pad and OK, dark round rewind, play/pause, fast forward and back), each with one word. Status messages (loading, time view, roll paused) sit in the header, left of the clock.
+
+### Playback
+
+- Faster stream starts: the archive.org server and folder lookups run together, the preview opens sooner after you stop on a channel, the static clears faster, a failed direct link retries through archive.org after 1 second, and learned open times are kept between launches.
+- Faster guide loading: the rows on screen load first; finished listings and program descriptions are kept between launches, so reopening the app within about an hour and a half needs no download or rebuild; downloads overlap with building the previous channel. Channels with commercials (up to 1,555 of them) build far faster: the commercial ranking and era lists are worked out once per commercial set and shared between channels, with the comparisons inlined.
+- Tapes with very large indexes (12-38 MB on some TOONERTIA tapes) no longer restart over and over: a stream counts as stuck only when its buffer stops filling.
+- Tapes the Roku player can't join live: a few SATURDAY MORNING tapes (YouCut edits with a microsecond timescale) can't be opened or jumped into past a point the Roku player computes from their length cut to 32 bits (36:26 into one 4-hour tape). Instead of NO SIGNAL, the tape plays from the furthest point it can reach, marked OUT OF SYNC on the playback banner.
+- OK while watching full screen opens playback options: start the program from the beginning, go back to live, and choose what happens next: switch to the live program at its start, finish this program and then rejoin live, or stay delayed and keep playing the channel's lineup in order (station breaks included), like a DVR. Pausing while out of sync adds to the delay. Back returns to the guide; * is left to the Roku TV's own settings menu.
+- Hide the Roku video player's built-in on-screen display (its clock, trick-play bar and loading bars). It is laid out for full screen even in the guide, and while a stream loaded its clock peeked out from behind the info panel at the right edge.
+- The full-screen banner shows the channel's icon beside its number and name.
+- Show 1.9.2 on the splash screen.
+
 ## 1.7.2 - November 11, 2026
 
 - Add Play/Pause while watching full screen. A paused picture lets the Roku screensaver start (screensaver policy, 4.5). Resume rejoins the live broadcast; if the program changed while paused, the new one opens. Changing channel or leaving full screen clears the pause.

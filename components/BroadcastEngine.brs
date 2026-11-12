@@ -415,19 +415,39 @@ end sub
 function bcAdPlan(s as Object) as Object
     slices = s.ads.slices
     size = slices.Count()
-    ranked = bcRankSlices(slices)
-    phases = []
-    years = []
-    totalMs = 0#
-    for index = 0 to size - 1
-        phases.Push(0)
-        years.Push(bcYear(slices[index].year))
-        totalMs = totalMs + slices[index].lengthMs
-    end for
-    for position = 0 to size - 1
-        phases[ranked[position]] = bcToInteger(bcFloorDiv(position * 1000000#, size * 1#))
-    end for
-    plan = {phases: phases, ranked: ranked, years: years, tiersByYear: {}, tierCache: {}, decades: invalid, start: 0}
+    ' Several channels draw on the same commercials (five share one set of
+    ' 1,555). Their ranking, wheel places, years and era lists depend only on
+    ' the commercials, so they are worked out once per set and shared.
+    sliceKey = size.ToStr()
+    if size > 0 then sliceKey = sliceKey + "|" + spelunkrText(slices[0].id) + "|" + spelunkrText(slices[size - 1].id)
+    if m.slicePlans = invalid then m.slicePlans = {}
+    shared = m.slicePlans[sliceKey]
+    if shared = invalid
+        ranked = bcRankSlices(slices)
+        phases = []
+        years = []
+        decadesOf = []
+        anywhere = []
+        totalMs = 0#
+        for index = 0 to size - 1
+            phases.Push(0)
+            year = bcYear(slices[index].year)
+            years.Push(year)
+            decadesOf.Push(Int(year / 10))
+            anywhere.Push(bcIsTrue(slices[index].anywhere))
+            totalMs = totalMs + slices[index].lengthMs
+        end for
+        for position = 0 to size - 1
+            phases[ranked[position]] = bcToInteger(bcFloorDiv(position * 1000000#, size * 1#))
+        end for
+        shared = {ranked: ranked, phases: phases, years: years, decadesOf: decadesOf, anywhere: anywhere, totalMs: totalMs, tierLists: {}}
+        m.slicePlans[sliceKey] = shared
+    end if
+    phases = shared.phases
+    ranked = shared.ranked
+    years = shared.years
+    totalMs = shared.totalMs
+    plan = {phases: phases, ranked: ranked, years: years, shared: shared, tiersByYear: {}, tierCache: {}, decades: invalid, start: 0}
     if bcIsWhole(s.ads.decades)
         if s.ads.decades >= 1 then plan.decades = s.ads.decades
     end if
@@ -533,7 +553,18 @@ function bcRankSlices(slices as Object) as Object
             b = middle
             while a < middle or b < finish
                 takeLeft = b >= finish
-                if not takeLeft and a < middle then takeLeft = bcSliceBefore(order[a], order[b], hashes, ids)
+                if not takeLeft and a < middle
+                    ' Inline bcSliceBefore: this runs about 17,000 times for 1,555 slices.
+                    left = order[a]
+                    right = order[b]
+                    if hashes[left] <> hashes[right]
+                        takeLeft = hashes[left] < hashes[right]
+                    else if ids[left] <> ids[right]
+                        takeLeft = ids[left] < ids[right]
+                    else
+                        takeLeft = left < right
+                    end if
+                end if
                 if takeLeft
                     merged.Push(order[a])
                     a = a + 1
@@ -561,20 +592,39 @@ end function
 function bcTier(s as Object, plan as Object, year as Integer, kind as Integer, tolerance as Integer) as Object
     key = year.ToStr() + "|" + kind.ToStr() + "|" + tolerance.ToStr()
     if plan.tierCache.DoesExist(key) then return plan.tierCache[key]
-    list = []
-    places = []
-    for each index in plan.ranked
-        include = false
-        if bcIsTrue(s.ads.slices[index].anywhere)
-            include = true
-        else
-            include = bcYearMatches(plan.years[index], year, kind, tolerance)
-        end if
-        if include
-            list.Push(index)
-            places.Push(plan.phases[index])
-        end if
-    end for
+    ' The commercials in an era depend only on the commercial set, so the list is
+    ' shared between channels; the comparison is inlined (bcYearMatches would be
+    ' called once per commercial per era, the slowest part of building listings).
+    shared = plan.shared
+    entry = shared.tierLists[key]
+    if entry = invalid
+        list = []
+        places = []
+        years = shared.years
+        decadesOf = shared.decadesOf
+        anywhere = shared.anywhere
+        phases = shared.phases
+        yearDecade = Int(year / 10)
+        for each index in shared.ranked
+            include = anywhere[index] or kind = 0
+            if not include and year <> -1
+                candidate = years[index]
+                if candidate <> -1
+                    if kind = 2 then difference = decadesOf[index] - yearDecade else difference = candidate - year
+                    if difference < 0 then difference = -difference
+                    include = difference <= tolerance
+                end if
+            end if
+            if include
+                list.Push(index)
+                places.Push(phases[index])
+            end if
+        end for
+        entry = {list: list, places: places}
+        shared.tierLists[key] = entry
+    end if
+    list = entry.list
+    places = entry.places
     breaks = 0
     for each entry in plan.yearKeys
         if bcYearMatches(entry.year, year, kind, tolerance) then breaks = breaks + plan.byYear[entry.key]

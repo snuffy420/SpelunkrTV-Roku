@@ -19,7 +19,7 @@ if not sevenzip:
     raise SystemExit("Install 7-Zip and place 7z on PATH to build the source archive.")
 
 output = root / f"releases/spelunkr-tv-guide-v{package.version()}-source.7z"
-excluded = {"releases", ".git", "__pycache__", "node_modules", ".staging", "out"}
+excluded = {"releases", ".git", "__pycache__", "node_modules", ".staging", "out", "NUL"}
 files = [p.relative_to(root).as_posix() for p in sorted(root.rglob("*"))
          if p.is_file() and not set(p.relative_to(root).parts) & excluded
          and p.suffix not in {".pyc", ".log"}]

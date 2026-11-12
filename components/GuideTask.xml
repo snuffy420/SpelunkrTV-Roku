@@ -6,6 +6,9 @@
         <field id="complete" type="boolean" value="false" />
         <field id="scheduleQueue" type="array" />
         <field id="scheduleResult" type="assocarray" />
+        <field id="scheduleBatch" type="array" alwaysNotify="true" />
+        <field id="charWidths" type="assocarray" />
+        <field id="channelCount" type="integer" value="0" />
     </interface>
     <script type="text/brightscript" uri="pkg:/components/GuideTask.brs" />
     <script type="text/brightscript" uri="pkg:/components/BroadcastEngine.brs" />
