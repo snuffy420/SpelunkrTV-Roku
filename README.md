@@ -8,7 +8,7 @@
 Spelunkr TV Guide puts [Spelunkr](https://spelunkr.tv/)'s always-on retro channels on your TV in a printed-guide style lineup. Every channel runs on the wall clock, so tuning in joins the program where the broadcast is right now, station breaks included, just like on the website.
 
 ![Spelunkr TV Guide 1.9.2 splash screen](assets/splash.png)
-<p align="center"><em>The 1.9.2 splash screen, as packaged in the Roku ZIP.</em></p>
+<p align="center"><em>The 1.7.2 splash screen, as packaged in the Roku ZIP.</em></p>
 
 ## Download and install
 
