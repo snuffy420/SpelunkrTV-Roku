@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.9.3 - November 13, 2026
+
+- Subtitles from Spelunkr's own subtitle files: English lines for the tapes Spelunkr subtitles (today the Japanese channels WAKU WAKU, ROCKET PUNCH and OVATV, plus their commercials), drawn over the picture in full screen and kept in step with the video. A **CC** tag shows on the banner and info panel when a program has them. They start off; turn them on or off with **OK → Subtitles** while watching, and the choice is remembered. New subtitles Spelunkr adds appear without an app update.
+- Live schedule updates, following the data rules Spelunkr set for TV apps: the app checks Spelunkr's small `live.json` once a minute and fetches the lineup again only when Spelunkr publishes a change, then rebuilds just the channels whose schedule changed. It identifies itself as `spelunkr-roku/<version>`.
+- The full-screen banner shows what is on next and when it starts.
+- Show 1.9.3 on the splash screen.
+
 ## 1.9.2 - November 12, 2026
 
 ### A guide that moves with the clock

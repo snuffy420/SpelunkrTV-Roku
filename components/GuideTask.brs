@@ -40,6 +40,7 @@ sub loadSpelunkrGuide()
         if LCase(spelunkrText(channel.family)) = "rewind" then familyText = "REWIND"
         output.Push({id: channel.id, name: channel.name, description: spelunkrText(channel.description), family: familyText, stats: statsText, dial: dial, color: channel.color, logoUri: "pkg:/images/logos/" + channel.id + ".png", schedule: spelunkrCurrentVersion(channel.versions, nowSec), timeline: [], timelineLoaded: false, timelineEndSec: 0, nowIndex: 0, now: invalid, next: invalid, elapsed: 0, descriptions: {}})
     end for
+    m.top.subtitlesPath = spelunkrText(lineup.subtitles)
     m.top.channels = output
     m.top.status = "Live lineup · " + output.Count().ToStr() + " channels"
     m.top.complete = true
@@ -86,7 +87,21 @@ sub runScheduleWorker()
     m.loadedCount = 0
     m.cachedCount = 0
     m.outbox = []
+    ' Subtitles: Spelunkr's index of subtitled tapes, matched to programs as
+    ' their listings are sent (workerAnnotateSubs).
+    m.subIndex = {}
+    m.subIndex.SetModeCaseSensitive()
+    m.subPath = ""
+    m.subKeyRegex = CreateObject("roRegex", "[^A-Za-z0-9]+", "")
+    workerLoadSubtitleIndex(m.top.subtitlesPath)
+    ' Heartbeat, as agreed with the Spelunkr devs for TV apps: live.json once a
+    ' minute; the lineup is fetched again only when its version sum changes.
+    m.nextLiveMs = 60000
+    m.liveKey = ""
+    m.liveTransfer = invalid
+    m.lastVersionSum = invalid
     m.top.ObserveField("scheduleQueue", m.port)
+    m.top.ObserveField("cueRequest", m.port)
     ' The scene may have queued its first request before this thread got here.
     workerReplaceQueue(m.top.scheduleQueue)
     ' One bad request must never end listing updates for the whole app, so each
@@ -94,9 +109,14 @@ sub runScheduleWorker()
     while true
         try
             workerStartRequests()
+            workerHeartbeat()
             message = Wait(250, m.port)
             if type(message) = "roSGNodeEvent"
-                workerReplaceQueue(message.GetData())
+                if message.GetField() = "cueRequest"
+                    if type(message.GetData()) = "roAssociativeArray" then m.queue.Unshift(message.GetData())
+                else
+                    workerReplaceQueue(message.GetData())
+                end if
             else if type(message) = "roUrlEvent"
                 workerHandleResponse(message)
             end if
@@ -157,9 +177,15 @@ sub workerStartRequests()
         ' queues more work (descriptions, server lookups) at the front, and
         ' removing it afterwards took one of those instead, so the request was
         ' answered again and again and nothing ever reached the screen.
-        if entry.kind = "manifest" or entry.kind = "details"
+        if entry.kind = "manifest" or entry.kind = "details" or entry.kind = "cues"
             m.queue.Shift()
-            if entry.kind = "manifest" then hit = workerUseCachedSchedule(entry) else hit = workerUseCachedDetails(entry)
+            if entry.kind = "manifest"
+                hit = workerUseCachedSchedule(entry)
+            else if entry.kind = "details"
+                hit = workerUseCachedDetails(entry)
+            else
+                hit = workerUseCachedCues(entry)
+            end if
             if hit then continue while
             m.queue.Unshift(entry)
         end if
@@ -184,6 +210,10 @@ end sub
 
 sub workerHandleResponse(event as Object)
     key = event.GetSourceIdentity().ToStr()
+    if key = m.liveKey
+        workerHandleLive(event)
+        return
+    end if
     if not m.inFlight.DoesExist(key) then return
     entry = m.inFlight[key].entry
     m.inFlight.Delete(key)
@@ -196,6 +226,11 @@ sub workerHandleResponse(event as Object)
         end if
     else if entry.kind = "resolve"
         if succeeded then workerResolveStep(entry, ParseJson(event.GetString()))
+    else if entry.kind = "cues"
+        if succeeded
+            text = event.GetString()
+            if workerPublishCues(entry, ParseJson(text)) then WriteAsciiFile(workerCachePath("cues", entry.manifest), text)
+        end if
     else
         result = invalid
         if succeeded
@@ -234,6 +269,7 @@ end sub
 ' field many times in a row from this thread loses all but the last value on
 ' the render thread, which is how 34 of 35 cached channels went missing.
 sub workerEmit(result as Object)
+    if result.events <> invalid then workerAnnotateSubs(result.events)
     m.outbox.Push(result)
 end sub
 
@@ -327,6 +363,146 @@ sub workerCountLoaded(fromCache as Boolean)
         print "All listings loaded: "; m.loadedCount; " channels in "; m.elapsedTimer.TotalMilliseconds(); " ms ("; m.cachedCount; " from cache)"
     end if
 end sub
+
+' ---- Heartbeat and lineup updates ----------------------------------------------
+
+sub workerHeartbeat()
+    if m.elapsedTimer.TotalMilliseconds() < m.nextLiveMs then return
+    m.nextLiveMs = m.elapsedTimer.TotalMilliseconds() + 60000
+    if m.liveTransfer <> invalid then m.liveTransfer.AsyncCancel()
+    m.liveTransfer = spelunkrTransfer(m.base + "live.json")
+    m.liveTransfer.SetMessagePort(m.port)
+    if m.liveTransfer.AsyncGetToString()
+        m.liveKey = m.liveTransfer.GetIdentity().ToStr()
+    else
+        m.liveTransfer = invalid
+        m.liveKey = ""
+    end if
+end sub
+
+sub workerHandleLive(event as Object)
+    m.liveTransfer = invalid
+    m.liveKey = ""
+    if event.GetInt() <> 1 or event.GetResponseCode() <> 200 then return
+    live = ParseJson(event.GetString())
+    if type(live) <> "roAssociativeArray" then return
+    if live.publicVersionSum = invalid then return
+    total = spelunkrWhole(live.publicVersionSum)
+    if m.lastVersionSum = invalid
+        m.lastVersionSum = total
+    else if total <> m.lastVersionSum
+        m.lastVersionSum = total
+        workerRefreshLineup()
+    end if
+end sub
+
+' A channel published a new schedule: fetch the lineup once and send each
+' channel's current version; the scene rebuilds the ones that changed.
+sub workerRefreshLineup()
+    lineup = spelunkrJson(m.base + "lineup.json")
+    if type(lineup) <> "roAssociativeArray" then return
+    if type(lineup.channels) <> "roArray" then return
+    workerLoadSubtitleIndex(spelunkrText(lineup.subtitles))
+    nowSec = CreateObject("roDateTime").AsSeconds()
+    updates = []
+    for each channel in lineup.channels
+        updates.Push({id: channel.id, schedule: spelunkrCurrentVersion(channel.versions, nowSec)})
+    end for
+    print "Spelunkr published an update; checking "; updates.Count(); " channels"
+    workerEmit({id: "", lineupUpdate: updates})
+end sub
+
+' ---- Subtitles -------------------------------------------------------------------
+' Spelunkr subtitles a set of tapes (today English for the Japanese channels).
+' The index maps a tape key to its cue file: the archive id alone, or the id
+' and the file's name without extension, with other characters turned to "-".
+
+sub workerLoadSubtitleIndex(path as Dynamic)
+    path = spelunkrText(path)
+    if path = "" or path = m.subPath then return
+    index = spelunkrJson(m.base + path)
+    if type(index) <> "roAssociativeArray" then return
+    if type(index.tapes) <> "roAssociativeArray" then return
+    tapes = {}
+    tapes.SetModeCaseSensitive()
+    for each key in index.tapes
+        tape = index.tapes[key]
+        tapes[key] = {file: spelunkrText(tape.file), source: spelunkrText(tape.source)}
+    end for
+    m.subIndex = tapes
+    m.subPath = path
+    print "Subtitle index: "; tapes.Count(); " tapes"
+end sub
+
+' Marks each program or commercial that has subtitles with {file, source}.
+sub workerAnnotateSubs(events as Object)
+    if m.subIndex.Count() = 0 then return
+    prefix = "https://archive.org/download/"
+    for each event in events
+        if event.url <> invalid and event.kind <> "card"
+            url = spelunkrText(event.url)
+            if Left(url, Len(prefix)) = prefix
+                rest = Mid(url, Len(prefix) + 1)
+                slash = Instr(1, rest, "/")
+                if slash > 1
+                    identifier = Left(rest, slash - 1)
+                    tape = m.subIndex[identifier]
+                    if tape = invalid then tape = m.subIndex[identifier + "/" + subtitleStem(Mid(rest, slash + 1).DecodeUriComponent())]
+                    if tape <> invalid then event.subs = tape
+                end if
+            end if
+        end if
+    end for
+end sub
+
+' "Folder/My File (1).ia.mp4" -> "My-File-1-ia", as Spelunkr names its keys.
+function subtitleStem(path as String) as String
+    name = path
+    position = Instr(1, name, "/")
+    while position > 0
+        name = Mid(name, position + 1)
+        position = Instr(1, name, "/")
+    end while
+    dot = 0
+    position = Instr(1, name, ".")
+    while position > 0
+        dot = position
+        position = Instr(position + 1, name, ".")
+    end while
+    if dot > 1 then name = Left(name, dot - 1)
+    stem = m.subKeyRegex.ReplaceAll(name, "-")
+    while Left(stem, 1) = "-"
+        stem = Mid(stem, 2)
+    end while
+    while Len(stem) > 0 and Right(stem, 1) = "-"
+        stem = Left(stem, Len(stem) - 1)
+    end while
+    return stem
+end function
+
+function workerUseCachedCues(entry as Object) as Boolean
+    text = workerReadCache(workerCachePath("cues", entry.manifest))
+    if text = "" then return false
+    return workerPublishCues(entry, ParseJson(text))
+end function
+
+' Sends a tape's cues as {a: start ms, b: end ms, t: text} in time order.
+function workerPublishCues(entry as Object, file as Dynamic) as Boolean
+    if type(file) <> "roAssociativeArray" then return false
+    if type(file.cues) <> "roArray" then return false
+    language = spelunkrText(file.to)
+    if language = "" then language = "en"
+    cues = []
+    for each cue in file.cues
+        if type(cue) = "roAssociativeArray"
+            text = spelunkrText(cue[language])
+            if text = "" then text = spelunkrText(cue.text)
+            if text <> "" then cues.Push({a: spelunkrWhole(cue.t0), b: spelunkrWhole(cue.t1), t: text})
+        end if
+    end for
+    workerEmit({id: "", cuesFor: entry.manifest, cues: cues})
+    return true
+end function
 
 ' Website timing first. A failure in it must never cost the channel its listings,
 ' and an error in this thread would otherwise silently end all listing updates.
@@ -457,7 +633,16 @@ function spelunkrTransfer(url as String) as Object
     transfer.SetCertificatesFile("common:/certs/ca-bundle.crt")
     transfer.EnableEncodings(true)
     transfer.AddHeader("Accept", "application/json")
-    transfer.AddHeader("User-Agent", "SpelunkrRoku/1.0")
+    ' Spelunkr's data host answers only clients that name themselves.
+    if m.userAgent = invalid
+        m.userAgent = "spelunkr-roku/1.9"
+        try
+            m.userAgent = "spelunkr-roku/" + CreateObject("roAppInfo").GetVersion()
+        catch problem
+            m.userAgent = "spelunkr-roku/1.9"
+        end try
+    end if
+    transfer.AddHeader("User-Agent", m.userAgent)
     transfer.SetUrl(url)
     return transfer
 end function

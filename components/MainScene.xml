@@ -119,12 +119,19 @@
         <Group id="playerBanner" visible="false">
             <Rectangle id="playerInfoBar" translation="[24,565]" width="1232" height="132" color="0x07112BEE" />
             <Poster id="playerLogo" translation="[48,578]" width="30" height="30" loadDisplayMode="scaleToFit" />
-            <Label id="playerChannel" text="" translation="[88,579]" width="1140" height="28" font="font:MediumBoldSystemFont" color="0xFFD740FF" />
+            <Label id="playerChannel" text="" translation="[88,579]" width="690" height="28" font="font:MediumBoldSystemFont" color="0xFFD740FF" />
+            <Label id="playerNext" text="" translation="[790,582]" width="438" height="24" horizAlign="right" font="font:SmallSystemFont" color="0xC7D2F2FF" />
             <Label id="playerTitle" text="" translation="[48,608]" width="1000" height="25" font="font:SmallBoldSystemFont" color="0xE8EAF0FF" />
             <Label id="playerTime" text="" translation="[1040,608]" width="190" height="25" horizAlign="right" font="font:SmallBoldSystemFont" color="0x00CCDDEE" />
             <Rectangle id="playerProgressTrack" translation="[48,640]" width="1180" height="8" color="0x27334FFF" />
             <Rectangle id="playerProgressFill" translation="[48,640]" width="1" height="8" color="0xFFD740FF" />
             <Group id="playerHints" translation="[48,656]" />
+        </Group>
+
+        <!-- Subtitles from Spelunkr's subtitle files, drawn by the app (full screen). -->
+        <Group id="subtitleBox" visible="false">
+            <Rectangle id="subtitleBack" translation="[140,0]" width="1000" height="44" color="0x000000B8" />
+            <Label id="subtitleText" text="" translation="[160,6]" width="960" height="0" wrap="true" maxLines="3" horizAlign="center" font="font:MediumSystemFont" color="0xFFFFFFFF" />
         </Group>
 
         <!-- Playback options (OK in full screen). Item labels are built in MainScene.brs. -->

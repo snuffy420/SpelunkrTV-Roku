@@ -62,6 +62,20 @@ sub init()
     m.playerBanner = m.top.FindNode("playerBanner")
     m.playerChannel = m.top.FindNode("playerChannel")
     m.playerLogo = m.top.FindNode("playerLogo")
+    m.playerNext = m.top.FindNode("playerNext")
+    ' Subtitles: cue lists by subtitle file, the one for the playing program,
+    ' and the viewer's on/off choice (off by default, remembered: some tapes
+    ' Spelunkr subtitles already have subtitles burned into the picture).
+    m.subtitleBox = m.top.FindNode("subtitleBox")
+    m.subtitleBack = m.top.FindNode("subtitleBack")
+    m.subtitleText = m.top.FindNode("subtitleText")
+    m.cues = {}
+    m.cues.SetModeCaseSensitive()
+    m.activeCues = invalid
+    m.activeSubs = invalid
+    m.cueIndex = 0
+    m.subShown = ""
+    m.subtitlesOn = loadSetting("subtitles", "off") = "on"
     m.playerTitle = m.top.FindNode("playerTitle")
     m.playerTime = m.top.FindNode("playerTime")
     m.playerProgressFill = m.top.FindNode("playerProgressFill")
@@ -216,6 +230,125 @@ sub buildHintRow(groupId as String, items as Object)
     end for
 end sub
 
+' ---- Subtitles -------------------------------------------------------------------
+' Spelunkr publishes timed English lines for some tapes (the Japanese channels).
+' The worker marks programs that have them (program.subs) and fetches a tape's
+' cues on request; they are drawn here, in step with the video position.
+
+sub setSubtitleSource(program as Object)
+    m.activeSubs = invalid
+    m.activeCues = invalid
+    m.cueIndex = 0
+    if program.subs <> invalid
+        m.activeSubs = program.subs
+        file = program.subs.file
+        if m.cues.DoesExist(file)
+            m.activeCues = m.cues[file]
+        else if m.scheduleTask <> invalid
+            m.scheduleTask.cueRequest = {kind: "cues", id: file, manifest: file, priority: true}
+        end if
+    end if
+    updateSubtitleTimer()
+end sub
+
+sub updateSubtitleTimer()
+    if m.subTimer = invalid then m.subTimer = makeTimer(0.25, true, "onSubtitleTick")
+    showing = m.activeCues <> invalid and m.subtitlesOn and m.fullscreen and m.previewHasStream
+    if showing
+        if m.subTimer.Control <> "start" then m.subTimer.Control = "start"
+    else
+        m.subTimer.Control = "stop"
+        showSubtitle("")
+    end if
+end sub
+
+sub onSubtitleTick()
+    cues = m.activeCues
+    if cues = invalid then return
+    count = cues.Count()
+    positionMs = m.previewVideo.position * 1000
+    index = m.cueIndex
+    if index >= count then index = count - 1
+    if index < 0 then index = 0
+    ' Jumped back (seek, restart): search again from the top.
+    if count > 0
+        if cues[index].a > positionMs then index = 0
+    end if
+    while index < count
+        if cues[index].b > positionMs then exit while
+        index = index + 1
+    end while
+    m.cueIndex = index
+    text = ""
+    if index < count
+        if cues[index].a <= positionMs then text = cues[index].t
+    end if
+    showSubtitle(text)
+end sub
+
+sub showSubtitle(text as String)
+    if text = ""
+        if m.subtitleBox.Visible then m.subtitleBox.Visible = false
+        m.subShown = ""
+        return
+    end if
+    if text <> m.subShown
+        m.subShown = text
+        m.subtitleText.Text = text
+    end if
+    height = m.subtitleText.BoundingRect().height
+    if height < 30 then height = 34
+    m.subtitleBack.Height = height + 12
+    ' Above the banner while it shows, near the bottom otherwise.
+    bottom = 688
+    if m.playerBanner.Visible then bottom = 556
+    m.subtitleBox.Translation = [0, bottom - height - 12]
+    if not m.subtitleBox.Visible then m.subtitleBox.Visible = true
+end sub
+
+function loadSetting(name as String, fallback as String) as String
+    value = fallback
+    try
+        section = CreateObject("roRegistrySection", "spelunkr")
+        if section.Exists(name) then value = section.Read(name)
+    catch problem
+        value = fallback
+    end try
+    return value
+end function
+
+sub saveSetting(name as String, value as String)
+    try
+        section = CreateObject("roRegistrySection", "spelunkr")
+        section.Write(name, value)
+        section.Flush()
+    catch problem
+        print "Setting not saved: "; problem.message
+    end try
+end sub
+
+' Spelunkr published new schedules (seen by the worker's heartbeat): channels
+' whose version changed get rebuilt from their new schedule.
+sub applyLineupUpdate(updates as Dynamic)
+    if type(updates) <> "roArray" then return
+    changed = 0
+    for each update in updates
+        if m.channelIndexById.DoesExist(update.id) and update.schedule <> invalid
+            channel = m.channels[m.channelIndexById[update.id]]
+            old = channel.schedule
+            different = old = invalid
+            if not different then different = old.version <> update.schedule.version or old.epochSec <> update.schedule.epochSec or old.startIndex <> update.schedule.startIndex
+            if different
+                channel.schedule = update.schedule
+                channel.timelineEndSec = 0
+                changed = changed + 1
+            end if
+        end if
+    end for
+    print "Lineup update: "; changed; " channels have a new schedule"
+    if changed > 0 then requestSchedules()
+end sub
+
 ' The Video node keeps its own HUD (a clock, the trick-play bar, "Loading" and
 ' "Retrieving" bars) laid out for full screen even with enableUI off. While a
 ' stream loads it briefly showed its clock, which peeked out from behind the
@@ -263,12 +396,14 @@ sub onGuideReady()
         m.channelIndexById[m.channels[index].id] = index
     end for
     ' The finished task would otherwise keep a second copy of the whole lineup.
+    subtitlesPath = m.task.subtitlesPath
     m.task.UnobserveField("status")
     m.task.UnobserveField("complete")
     m.task = invalid
     m.scheduleTask = CreateObject("roSGNode", "GuideTask")
     m.scheduleTask.functionName = "runScheduleWorker"
     m.scheduleTask.channelCount = m.channels.Count()
+    m.scheduleTask.subtitlesPath = subtitlesPath
     m.scheduleTask.ObserveField("scheduleBatch", "onScheduleBatch")
     m.scheduleTask.Control = "RUN"
     m.status.Text = ""
@@ -430,6 +565,7 @@ sub updateProgress(channel as Object)
     if program = invalid then return
     meta = spelunkrDuration(channel.elapsed) + " / " + spelunkrDuration(program.duration)
     if program.year <> "" then meta = meta + "  ·  " + program.year
+    if program.subs <> invalid then meta = meta + "  ·  CC"
     m.nowMeta.Text = meta
     progress = Int(650 * channel.elapsed / program.duration)
     if progress < 1 then progress = 1
@@ -1206,6 +1342,18 @@ end sub
 
 sub handleScheduleResult(result as Dynamic)
     if type(result) <> "roAssociativeArray" then return
+    if result.DoesExist("lineupUpdate")
+        applyLineupUpdate(result.lineupUpdate)
+        return
+    end if
+    if result.DoesExist("cuesFor")
+        m.cues[result.cuesFor] = result.cues
+        if m.activeSubs <> invalid
+            if m.activeSubs.file = result.cuesFor then m.activeCues = result.cues
+        end if
+        updateSubtitleTimer()
+        return
+    end if
     if result.DoesExist("resolved")
         for each pair in result.resolved
             m.directBases[pair.identifier] = pair.base
@@ -1753,6 +1901,15 @@ sub openSyncPanel(automatic as Boolean)
         m.syncTitle.Text = "PLAYBACK OPTIONS"
         m.syncSubtitle.Text = "Watching live, in sync with spelunkr.tv."
     end if
+    if program <> invalid
+        if program.subs <> invalid
+            state = "Off"
+            if m.subtitlesOn then state = "On"
+            kind = "English"
+            if program.subs.source = "machine" then kind = "English, machine-translated"
+            items.Push({text: "Subtitles: " + state + "  (" + kind + ")", action: "subs"})
+        end if
+    end if
     items.Push({text: "Back to the guide", action: "guide"})
     m.panelItems = items
     m.panelIndex = 0
@@ -1808,7 +1965,11 @@ end function
 
 sub applySyncAction(action as String)
     closeSyncPanel()
-    if action = "restart"
+    if action = "subs"
+        m.subtitlesOn = not m.subtitlesOn
+        if m.subtitlesOn then saveSetting("subtitles", "on") else saveSetting("subtitles", "off")
+        updateSubtitleTimer()
+    else if action = "restart"
         restartProgram()
     else if action = "live"
         goLive()
@@ -1839,6 +2000,13 @@ sub renderPlaybackBanner()
     if m.playerLogo.Uri <> channel.logoUri then m.playerLogo.Uri = channel.logoUri
     program = playingProgram(channel)
     if m.behind <> invalid then m.playerChannel.Text = m.playerChannel.Text + "  ·  " + behindLabel()
+    if program <> invalid
+        if program.subs <> invalid then m.playerChannel.Text = m.playerChannel.Text + "  ·  CC"
+    end if
+    ' Now & next: what follows on the live schedule, and when.
+    nextText = ""
+    if m.behind = invalid and channel.next <> invalid then nextText = "NEXT  " + channel.next.title + "  ·  " + localTimeLabel(channel.next.startSec)
+    if m.playerNext.Text <> nextText then m.playerNext.Text = nextText
     position = 0
     duration = 0
     if program <> invalid
@@ -1936,6 +2104,9 @@ sub stopPreview()
     m.breakCard.Visible = false
     ' Any stop ends out-of-sync playback; the code that resumes it sets it again.
     m.behind = invalid
+    m.activeSubs = invalid
+    m.activeCues = invalid
+    updateSubtitleTimer()
     if not m.previewHasStream then return
     m.previewHasStream = false
     m.previewVideo.Control = "stop"
@@ -2017,6 +2188,7 @@ sub openStream(program as Object, key as String, startAt as Integer)
     m.previewVideo.Control = "play"
     m.previewVideo.Visible = true
     hideVideoHud(m.previewVideo)
+    setSubtitleSource(program)
 end sub
 
 sub enterFullscreen()
@@ -2046,6 +2218,7 @@ sub enterFullscreen()
     m.top.SetFocus(true)
     hideGuideChrome(true)
     showPlaybackBanner()
+    updateSubtitleTimer()
     ' Fell back in the preview: offer the choices once now that the viewer is here.
     if m.behind <> invalid
         if not m.behind.offered then openSyncPanel(true)
@@ -2110,6 +2283,7 @@ sub exitFullscreen()
     if m.previewVideo.state = "playing" or m.breakCard.Visible then hideStatic() else showStatic()
     updateTuningBadge(currentEpochSeconds())
     updateProgramInfo(m.channels[m.currentIndex])
+    updateSubtitleTimer()
     m.top.SetFocus(true)
 end sub
 

@@ -1,6 +1,6 @@
 # Roku certification checklist
 
-Roku's Static Analysis flagged these on the Spelunkr TV Guide 1.6 upload (November 2026). They are fixed in 1.7; 1.9.2 keeps every fix. Every zer0TV build has the same code-level issues, so use this list for those apps too.
+Roku's Static Analysis flagged these on the Spelunkr TV Guide 1.6 upload (November 2026). They are fixed in 1.7; 1.9.3 keeps every fix. Every zer0TV build has the same code-level issues, so use this list for those apps too.
 
 ## Errors (block publishing)
 

@@ -9,6 +9,8 @@
         <field id="scheduleBatch" type="array" alwaysNotify="true" />
         <field id="charWidths" type="assocarray" />
         <field id="channelCount" type="integer" value="0" />
+        <field id="subtitlesPath" type="string" />
+        <field id="cueRequest" type="assocarray" alwaysNotify="true" />
     </interface>
     <script type="text/brightscript" uri="pkg:/components/GuideTask.brs" />
     <script type="text/brightscript" uri="pkg:/components/BroadcastEngine.brs" />
