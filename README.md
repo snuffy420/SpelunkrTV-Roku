@@ -1,31 +1,31 @@
 <p align="center"><img src="assets/icon.png" alt="Spelunkr TV Guide icon" width="112"></p>
-<h1 align="center">Spelunkr TV Guide</h1>
+<h1 align="center">Spelunkr TV Guide (Unofficial)</h1>
 <p align="center"><strong>Unofficial Roku app for the Spelunkr live channel lineup</strong></p>
-<p align="center">Scrolling live guide · Scan · Live preview · Channel directory · Version 1.9.3</p>
+<p align="center">Scrolling live guide · Scan · Live preview · Channel directory · Version 1.9.4</p>
 
 > **Unofficial app.** Spelunkr TV Guide for Roku is an independent, fan-made client. It is not made, endorsed or supported by [Spelunkr](https://spelunkr.tv/). Channel names, logos, descriptions and schedules belong to Spelunkr and its sources, and are read from Spelunkr's public guide data while the app runs.
 
 Spelunkr TV Guide puts [Spelunkr](https://spelunkr.tv/)'s always-on retro channels on your TV in a printed-guide style lineup. Every channel runs on the wall clock, so tuning in joins the program where the broadcast is right now, station breaks included, just like on the website.
 
-![Spelunkr TV Guide 1.9.3 splash screen](assets/splash.png)
-<p align="center"><em>The 1.9.3 splash screen, as packaged in the Roku ZIP.</em></p>
+![Spelunkr TV Guide 1.9.4 splash screen](assets/splash.png)
+<p align="center"><em>The 1.9.4 splash screen, as packaged in the Roku ZIP.</em></p>
 
 ## Download and install
 
 | Package | What you get | Download |
 | --- | --- | --- |
-| **Roku ZIP** | The sideloadable app; upload this ZIP directly to your Roku | [spelunkr-tv-guide-v1.9.3-roku.zip](https://github.com/snuffy420/Spelunkr-TV-Guide/releases/download/v1.9.3/spelunkr-tv-guide-v1.9.3-roku.zip) |
-| **Source 7z** | Editable BrightScript, artwork, build tools and documentation | [spelunkr-tv-guide-v1.9.3-source.7z](https://github.com/snuffy420/Spelunkr-TV-Guide/releases/download/v1.9.3/spelunkr-tv-guide-v1.9.3-source.7z) |
+| **Roku ZIP** | The sideloadable app; upload this ZIP directly to your Roku | [spelunkr-tv-guide-v1.9.4-roku.zip](https://github.com/snuffy420/Spelunkr-TV-Guide/releases/download/v1.9.4/spelunkr-tv-guide-v1.9.4-roku.zip) |
+| **Source 7z** | Editable BrightScript, artwork, build tools and documentation | [spelunkr-tv-guide-v1.9.4-source.7z](https://github.com/snuffy420/Spelunkr-TV-Guide/releases/download/v1.9.4/spelunkr-tv-guide-v1.9.4-source.7z) |
 
-Checksums sit beside both downloads on the [release page](https://github.com/snuffy420/Spelunkr-TV-Guide/releases/tag/v1.9.3). The source archive is for development; the Roku installer needs the Roku ZIP.
+Checksums sit beside both downloads on the [release page](https://github.com/snuffy420/Spelunkr-TV-Guide/releases/tag/v1.9.4). The source archive is for development; the Roku installer needs the Roku ZIP.
 
 ### Install on Roku
 
 1. Enable Developer Mode: press **Home** three times, **Up** twice, then **Right, Left, Right, Left, Right**. Follow the TV prompts, set an installer password, and note the Roku IP address.
 2. From a computer on the same network, open `http://ROKU_IP` in your browser.
 3. Sign in as `rokudev` using your installer password.
-4. Select **Upload**, choose `spelunkr-tv-guide-v1.9.3-roku.zip`, then select **Install**.
-5. Open **Spelunkr TV Guide**. Reinstalling replaces the existing sideloaded app.
+4. Select **Upload**, choose `spelunkr-tv-guide-v1.9.4-roku.zip`, then select **Install**.
+5. Open **Spelunkr TV Guide (Unofficial)**. Reinstalling replaces the existing sideloaded app.
 
 See [Roku's developer setup](https://developer.roku.com/docs/developer-program/getting-started/developer-setup.md) for the official instructions.
 
@@ -59,7 +59,7 @@ Press **OK** while watching to open playback options. While you are live, you ca
 
 ### Subtitles
 
-Spelunkr publishes English subtitles for some tapes, today mostly the Japanese channels WAKU WAKU, ROCKET PUNCH and OVATV. When the program you are watching has them, a **CC** tag shows on the banner and the info panel, and **OK → Subtitles** turns them on or off. They start off, and the app remembers your choice. Many are machine translations, and some of those tapes already have subtitles in the picture. New subtitles Spelunkr adds appear without an app update.
+Spelunkr publishes English subtitles for some tapes, today mostly the Japanese channels WAKU WAKU, ROCKET PUNCH, OVATV and HENSHIN. When the program you are watching has them, a **CC** tag shows on the banner and the info panel, and **OK → Subtitles** turns them on or off. They start off, and the app remembers your choice. Many are machine translations, and some of those tapes already have subtitles in the picture. New subtitles Spelunkr adds appear without an app update.
 
 ### Out of sync
 

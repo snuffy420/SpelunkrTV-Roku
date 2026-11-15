@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.9.4 - November 14, 2026
+
+- New channel: HENSHIN on 301, with Japanese commercials in its breaks.
+- "Unofficial" is now on the splash screen, in the guide header, and in the app's name on the Roku home screen (Spelunkr TV Guide (Unofficial)), so it's clear this app isn't made by Spelunkr.
+- Show 1.9.4 on the splash screen.
+
 ## 1.9.3 - November 13, 2026
 
 - Subtitles from Spelunkr's own subtitle files: English lines for the tapes Spelunkr subtitles (today the Japanese channels WAKU WAKU, ROCKET PUNCH and OVATV, plus their commercials), drawn over the picture in full screen and kept in step with the video. A **CC** tag shows on the banner and info panel when a program has them. They start off; turn them on or off with **OK → Subtitles** while watching, and the choice is remembered. New subtitles Spelunkr adds appear without an app update.

@@ -12,7 +12,7 @@
             <Rectangle id="headerRule" translation="[0,76]" width="1280" height="2" color="0xFFD740FF" />
             <Poster id="brandMark" uri="pkg:/images/spelunkr-mark.png" translation="[28,15]" width="48" height="48" loadDisplayMode="scaleToFit" />
             <Label id="brandTitle" text="Spelunkr" translation="[92,8]" width="420" height="32" font="font:MediumBoldSystemFont" color="0xFFD740FF" />
-            <Label id="brandSub" text="TV Guide" translation="[94,39]" width="220" height="24" font="font:SmallBoldSystemFont" color="0xFFD740FF" />
+            <Label id="brandSub" text="Unofficial TV Guide" translation="[94,39]" width="400" height="24" font="font:SmallBoldSystemFont" color="0xFFD740FF" />
             <Label id="clock" text="" translation="[1010,25]" width="230" height="28" horizAlign="right" font="font:SmallBoldSystemFont" color="0xE8EAF0FF" />
             <Rectangle id="previewPanel" translation="[32,78]" width="516" height="278" color="0x1B2868FF" />
             <Rectangle id="previewEdge" translation="[32,78]" width="3" height="278" color="0x00CCDDEE" />
