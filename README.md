@@ -14,10 +14,10 @@ Spelunkr TV Guide puts [Spelunkr](https://spelunkr.tv/)'s always-on retro channe
 
 | Package | What you get | Download |
 | --- | --- | --- |
-| **Roku ZIP** | The sideloadable app; upload this ZIP directly to your Roku | [spelunkr-tv-guide-v1.9.4-roku.zip](https://github.com/snuffy420/Spelunkr-TV-Guide/releases/download/v1.9.4/spelunkr-tv-guide-v1.9.4-roku.zip) |
-| **Source 7z** | Editable BrightScript, artwork, build tools and documentation | [spelunkr-tv-guide-v1.9.4-source.7z](https://github.com/snuffy420/Spelunkr-TV-Guide/releases/download/v1.9.4/spelunkr-tv-guide-v1.9.4-source.7z) |
+| **Roku ZIP** | The sideloadable app; upload this ZIP directly to your Roku | [spelunkr-tv-guide-v1.9.4-roku.zip](https://github.com/snuffy420/SpelunkrTV-Roku/releases/download/v1.9.4/spelunkr-tv-guide-v1.9.4-roku.zip) |
+| **Source 7z** | Editable BrightScript, artwork, build tools and documentation | [spelunkr-tv-guide-v1.9.4-source.7z](https://github.com/snuffy420/SpelunkrTV-Roku/releases/download/v1.9.4/spelunkr-tv-guide-v1.9.4-source.7z) |
 
-Checksums sit beside both downloads on the [release page](https://github.com/snuffy420/Spelunkr-TV-Guide/releases/tag/v1.9.4). The source archive is for development; the Roku installer needs the Roku ZIP.
+Checksums sit beside both downloads on the [release page](https://github.com/snuffy420/SpelunkrTV-Roku/releases/tag/v1.9.4). The source archive is for development; the Roku installer needs the Roku ZIP.
 
 ### Install on Roku
 
@@ -128,7 +128,7 @@ If Spelunkr TV Guide is useful to you, please consider supporting the people who
 Questions, feedback, a bug report or a custom build? Get in touch through the Spelunkr TV Guide contact form.
 
 <p align="center">
-  <a href="https://snuffy420.github.io/Spelunkr-TV-Guide/docs/contact.html">
+  <a href="https://snuffy420.github.io/SpelunkrTV-Roku/docs/contact.html">
     <img src="assets/contact-button.svg" alt="Contact the developer" width="260">
   </a>
 </p>
