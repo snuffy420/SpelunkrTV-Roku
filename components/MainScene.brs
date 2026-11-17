@@ -75,7 +75,7 @@ sub init()
     m.activeSubs = invalid
     m.cueIndex = 0
     m.subShown = ""
-    m.subtitlesOn = loadSetting("subtitles", "off") = "on"
+    m.subtitlesOn = loadSetting("subtitles", "on") = "on"
     m.playerTitle = m.top.FindNode("playerTitle")
     m.playerTime = m.top.FindNode("playerTime")
     m.playerProgressFill = m.top.FindNode("playerProgressFill")
@@ -94,7 +94,7 @@ sub init()
         label.Height = 36
         label.VertAlign = "center"
         label.Font = "font:SmallBoldSystemFont"
-        label.Color = "0xE8EAF0FF"
+        sc(label, "Color", "0xE8EAF0FF")
         m.syncItemLabels.Push(label)
     end for
     m.panelOpen = false
@@ -149,11 +149,18 @@ sub init()
     m.userSeeked = false
     m.top.SetFocus(true)
 
+    loadTheme()
     buildGuideRows()
     buildHintRows()
     buildTimeStrip()
     buildScan()
+    initSettings()
+    initWeather()
+    buildZipPad()
     buildDirectoryCards()
+    initOptions()
+    initTuning()
+    applyTheme(m.themeId)
     startLineupTask()
 
     m.tickTimer = CreateObject("roSGNode", "Timer")
@@ -193,40 +200,48 @@ end sub
 sub buildHintRows()
     buildHintRow("remoteHints", [{icons: ["dpad-updown"], text: "CHANNEL"}, {icons: ["dpad-leftright"], text: "PAGE"}, {icons: ["rewind", "forward"], text: "TIME"}, {icons: ["ok"], text: "WATCH"}])
     buildHintRow("directoryHints", [{icons: ["dpad-all"], text: "CHOOSE"}, {icons: ["ok"], text: "SELECT"}, {icons: ["rewind", "forward"], text: "PAGE"}, {icons: ["back"], text: "GUIDE"}])
-    buildHintRow("playerHints", [{icons: ["dpad-updown"], text: "CHANNEL"}, {icons: ["playpause"], text: "PAUSE"}, {icons: ["dpad-leftright"], text: "10 SEC"}, {icons: ["ok"], text: "OPTIONS"}, {icons: ["back"], text: "GUIDE"}])
+    buildHintRow("playerHints", [{icons: ["dpad-updown"], text: "CHANNEL"}, {icons: ["replay"], text: "CHANNELS"}, {icons: ["playpause"], text: "PAUSE"}, {icons: ["dpad-leftright"], text: "10 SEC"}, {icons: ["ok"], text: "OPTIONS"}, {icons: ["back"], text: "GUIDE"}])
     buildHintRow("syncHints", [{icons: ["dpad-updown"], text: "CHOOSE"}, {icons: ["ok"], text: "SELECT"}, {icons: ["back"], text: "CLOSE"}])
 end sub
 
 ' Icon widths in the 720p layout (24 px tall; the PNGs are 36 px tall).
 function hintIconWidth(name as String) as Integer
-    widths = {"dpad-updown": 35, "dpad-leftright": 35, "dpad-all": 24, "ok": 29, "rewind": 24, "forward": 24, "playpause": 24, "back": 24, "star": 24}
+    widths = {"dpad-updown": 35, "dpad-leftright": 35, "dpad-all": 24, "ok": 29, "rewind": 24, "forward": 24, "playpause": 24, "back": 24, "star": 24, "replay": 24}
     if widths.DoesExist(name) then return widths[name]
     return 24
 end function
 
-sub buildHintRow(groupId as String, items as Object)
+' compact: smaller icons, text and gaps, for narrow panels (the quick channel list).
+sub buildHintRow(groupId as String, items as Object, compact = false as Boolean)
     group = m.top.FindNode(groupId)
     if group = invalid then return
+    iconHeight = 24
+    gap = 22
+    if compact
+        iconHeight = 20
+        gap = 11
+    end if
     x = 0
     for each item in items
         for each icon in item.icons
             poster = group.CreateChild("Poster")
             poster.Uri = "pkg:/images/hints/" + icon + ".png"
-            poster.Width = hintIconWidth(icon)
-            poster.Height = 24
-            poster.Translation = [x, 3]
+            poster.Width = Int(hintIconWidth(icon) * iconHeight / 24)
+            poster.Height = iconHeight
+            poster.Translation = [x, Int((30 - iconHeight) / 2)]
             x = x + poster.Width + 3
         end for
         label = group.CreateChild("Label")
         label.Font = "font:SmallestBoldSystemFont"
-        label.Color = "0xE8EAF0FF"
+        if compact then label.Font.Size = 14
+        sc(label, "Color", "0xE8EAF0FF")
         label.Height = 30
         label.VertAlign = "center"
         label.Text = item.text
-        label.Translation = [x + 4, 0]
+        label.Translation = [x + 3, 0]
         width = label.BoundingRect().width
         if width <= 0 then width = Len(item.text) * 11
-        x = x + 4 + width + 22
+        x = x + 3 + width + gap
     end for
 end sub
 
@@ -409,7 +424,9 @@ sub onGuideReady()
     m.status.Text = ""
     m.top.SetFocus(true)
     m.active = true
-    showChannel(0, true)
+    requestWeather()
+    m.weatherStartTimer.Control = "start"
+    showChannel(startChannelIndex(), true)
     requestSchedules()
     m.lastInputSec = currentEpochSeconds()
     signalLaunchComplete()
@@ -499,8 +516,11 @@ sub showChannel(index as Integer, preview as Boolean)
     refreshChannelSchedule(channel)
     accent = spelunkrColor(channel.color)
     for each edge in m.accentEdges
-        edge.Color = accent
+        sc(edge, "Color", accent)
     end for
+    channelThemeFor(channel)
+    showChannelOsd(channel)
+    if m.fullscreen then rememberLastChannel(channel)
     m.channelLogo.Uri = channel.logoUri
     m.channelName.Text = channel.name
     updateProgramInfo(channel)
@@ -539,10 +559,10 @@ sub updateProgramInfo(channel as Object)
     program = channel.now
     if program <> invalid
         m.nowTitle.Text = program.title
-        fitLabel(m.nowDescription, programDescription(channel, program), "font:SmallSystemFont", [22, 20, 19, 18, 17], 650, 112)
+        fitLabel(m.nowDescription, programDescription(channel, program), "font:SmallSystemFont", [22, 20, 19, 18, 17], 788, 112)
         nextTitle = "UP NEXT"
         if channel.next <> invalid then nextTitle = nextTitle + "  " + channel.next.title
-        fitLabel(m.nextTitle, nextTitle, "font:SmallSystemFont", [22, 20, 19, 18, 17], 650, 52)
+        fitLabel(m.nextTitle, nextTitle, "font:SmallSystemFont", [22, 20, 19, 18, 17], 788, 52)
         updateProgress(channel)
     else
         m.nowTitle.Text = "Guide details loading"
@@ -567,9 +587,9 @@ sub updateProgress(channel as Object)
     if program.year <> "" then meta = meta + "  ·  " + program.year
     if program.subs <> invalid then meta = meta + "  ·  CC"
     m.nowMeta.Text = meta
-    progress = Int(650 * channel.elapsed / program.duration)
+    progress = Int(788 * channel.elapsed / program.duration)
     if progress < 1 then progress = 1
-    if progress > 650 then progress = 650
+    if progress > 788 then progress = 788
     m.progressFill.Width = progress
 end sub
 
@@ -596,7 +616,8 @@ sub buildGuideRows()
         logo.LoadDisplayMode = "scaleToFit"
         name = addRowLabel(row, 89, 0, 214, nameFont, "0xFFE22EFF")
         name.HorizAlign = "left"
-        m.rowViews.Push({group: row, logo: logo, dial: dial, dialShadow: dialShadow, name: name, cells: [], highlightStart: -1})
+        star = addFavoriteStar(row, 74, 0, 14)
+        m.rowViews.Push({group: row, logo: logo, dial: dial, dialShadow: dialShadow, name: name, star: star, cells: [], highlightStart: -1})
     end for
 end sub
 
@@ -608,7 +629,7 @@ function addRowLabel(parent as Object, x as Integer, y as Integer, w as Integer,
     label.HorizAlign = "center"
     label.VertAlign = "center"
     label.Font = font
-    label.Color = color
+    sc(label, "Color", color)
     return label
 end function
 
@@ -628,6 +649,7 @@ sub fillRow(slot as Integer, channelIndex as Integer)
         view.dial.Text = channel.dial
         view.dialShadow.Text = channel.dial
         view.name.Text = channel.name
+        view.star.Visible = isFavorite(channel)
         renderRowCells(slot, channel)
         view.group.Visible = true
         view.bgRow.Visible = true
@@ -705,8 +727,8 @@ sub enterScan()
     ' Scan starts rolling from the rows already on screen.
     renderScanRows()
     ' The button lights orange while Scan is on; that is the only marker.
-    m.scanFaceTop.Color = "0xD2640FFF"
-    m.scanFaceBottom.Color = "0xB0480AFF"
+    sc(m.scanFaceTop, "Color", "0xD2640FFF")
+    sc(m.scanFaceBottom, "Color", "0xB0480AFF")
     ' Play turns into pause on the button while Scan runs.
     m.scanIcon.Uri = "pkg:/images/pause.png"
     m.status.Text = ""
@@ -722,14 +744,16 @@ sub exitScan()
     m.scanResumeTimer.Control = "stop"
     m.rollAnim.Control = "stop"
     m.rollGroup.Translation = [0, 0]
-    m.scanFaceTop.Color = "0x2B2FC4FF"
-    m.scanFaceBottom.Color = "0x2226A0FF"
+    sc(m.scanFaceTop, "Color", "0x2B2FC4FF")
+    sc(m.scanFaceBottom, "Color", "0x2226A0FF")
     m.scanIcon.Uri = "pkg:/images/arrow-right.png"
     m.status.Text = ""
-    ' Keep the rows where Scan left them; the highlighted channel must be on screen.
+    ' Keep the rows where Scan left them: the viewer is looking at this page.
+    ' If the featured channel has rolled off it, the cursor comes to the top
+    ' channel on screen instead of the guide jumping back to it.
     slot = slotOfChannel(m.currentIndex)
-    if slot < 0 or slot > 7 then m.rowTop = m.currentIndex
     renderGuideRows()
+    if slot < 0 or slot > 7 then showChannel(m.rowTop, true)
 end sub
 
 ' Nine rows from the top channel, wrapping round the lineup.
@@ -930,13 +954,13 @@ sub buildTimeStrip()
         tick = m.headerStrip.CreateChild("Rectangle")
         tick.Width = 1
         tick.Height = 28
-        tick.Color = "0x7788BB66"
+        sc(tick, "Color", "0x7788BB66")
         heading = m.headerStrip.CreateChild("Label")
         heading.Width = 140
         heading.Height = 24
         heading.Translation = [0, 2]
         heading.Font = "font:SmallBoldSystemFont"
-        heading.Color = "0xFFD740FF"
+        sc(heading, "Color", "0xFFD740FF")
         m.headings.Push({tick: tick, label: heading})
     end for
     for slot = 0 to 8
@@ -951,7 +975,7 @@ sub buildTimeStrip()
         view.arrow.Uri = "pkg:/images/arrow-left.png"
         view.arrow.Width = 8
         view.arrow.Height = 14
-        view.arrow.BlendColor = "0xE8EAF0FF"
+        sc(view.arrow, "BlendColor", "0xE8EAF0FF")
         view.arrow.Visible = false
     end for
     ' The elapsed part of each now-playing cell, a shade darker. One per row,
@@ -962,7 +986,7 @@ sub buildTimeStrip()
         shade.Translation = [0, slot * 35 + 1]
         shade.Height = 33
         shade.Width = 0
-        shade.Color = "0x00000048"
+        sc(shade, "Color", "0x00000048")
         shade.Visible = false
         m.rowViews[slot].shade = shade
     end for
@@ -970,7 +994,7 @@ sub buildTimeStrip()
     m.nowMarker.Uri = "pkg:/images/now-marker.png"
     m.nowMarker.Width = 12
     m.nowMarker.Height = 8
-    m.nowMarker.BlendColor = "0xFFD740FF"
+    sc(m.nowMarker, "BlendColor", "0xFFD740FF")
     m.nowMarker.Translation = [0, 20]
     ' A short glide for REW / FF and the return to now.
     m.stripGlide = CreateObject("roSGNode", "Animation")
@@ -1005,7 +1029,7 @@ sub rebaseTimeStrip()
         x = stripX(sec)
         divider = m.dividers[index]
         divider.Translation = [x - 1, 0]
-        if index mod 2 = 0 then divider.Color = "0x7788BB66" else divider.Color = "0x7788BB33"
+        if index mod 2 = 0 then sc(divider, "Color", "0x7788BB66") else sc(divider, "Color", "0x7788BB33")
         heading = m.headings[index]
         heading.tick.Translation = [x - 1, 0]
         heading.label.Translation = [x + 7, 2]
@@ -1018,15 +1042,7 @@ end sub
 function localTimeLabel(sec as Integer) as String
     m.labelClock.FromSeconds(sec)
     m.labelClock.ToLocalTime()
-    hour = m.labelClock.GetHours()
-    minute = m.labelClock.GetMinutes()
-    suffix = "AM"
-    if hour >= 12 then suffix = "PM"
-    hour = hour mod 12
-    if hour = 0 then hour = 12
-    minutes = minute.ToStr()
-    if Len(minutes) = 1 then minutes = "0" + minutes
-    return hour.ToStr() + ":" + minutes + " " + suffix
+    return clockText(m.labelClock.GetHours(), m.labelClock.GetMinutes())
 end function
 
 function viewStartSec(nowSec as Integer) as Integer
@@ -1231,7 +1247,7 @@ function drawGuideCell(view as Object, used as Integer, span as Object) as Integ
     cell.rect.Width = cellWidth
     ' One color for every program: the now line splits each row into dimmed
     ' (aired, under the shade) and bright (still to come).
-    cell.rect.Color = "0x344A91FF"
+    sc(cell.rect, "Color", "0x344A91FF")
     if span.isNow
         view.nowCellX = span.x
         view.nowCellRight = span.right
@@ -1270,7 +1286,7 @@ function addGuideLabel(parent as Object, x as Integer, y as Integer, w as Intege
     label.Width = w
     label.Height = h
     label.Font = fontName
-    label.Color = color
+    sc(label, "Color", color)
     return label
 end function
 
@@ -1346,6 +1362,14 @@ sub handleScheduleResult(result as Dynamic)
         applyLineupUpdate(result.lineupUpdate)
         return
     end if
+    if result.DoesExist("weather")
+        onWeather(result.weather)
+        return
+    end if
+    if result.DoesExist("dayFor")
+        onDaySchedule(result)
+        return
+    end if
     if result.DoesExist("cuesFor")
         m.cues[result.cuesFor] = result.cues
         if m.activeSubs <> invalid
@@ -1365,6 +1389,7 @@ sub handleScheduleResult(result as Dynamic)
     channel = m.channels[channelIndex]
     if result.DoesExist("descriptions")
         channel.descriptions.Append(result.descriptions)
+        if m.sheetMode = "schedule" and m.scheduleChannel = channelIndex then refreshScheduleAbout()
         if channelIndex = m.currentIndex then updateProgramInfo(channel)
         return
     end if
@@ -1414,6 +1439,7 @@ end sub
 sub hideStatic()
     cancelStaticFade()
     m.previewStatic.Visible = false
+    hideTuneCard()
 end sub
 
 ' The picture appears by dissolving the static away from in front of it.
@@ -1421,6 +1447,7 @@ sub fadeOutStatic()
     if m.staticFading or not m.previewStatic.Visible then return
     m.staticFading = true
     m.previewBadge.Visible = false
+    hideTuneCard()
     m.staticFade.Control = "start"
 end sub
 
@@ -1572,8 +1599,8 @@ sub layoutStatic()
         m.previewStatic.Translation = [0, 0]
         m.previewStatic.Scale = [1280 / 374, 720 / 210]
     else
-        m.previewStatic.Translation = [95, 94]
-        m.previewStatic.Scale = [1, 1]
+        m.previewStatic.Translation = [52, 89]
+        m.previewStatic.Scale = [338 / 374, 254 / 210]
     end if
 end sub
 
@@ -1587,20 +1614,11 @@ sub updateTuningBadge(nowSec as Integer)
     end if
     if m.fullscreen or m.staticFading or not m.previewStatic.Visible
         m.previewBadge.Visible = false
+        hideTuneCard()
         return
     end if
-    text = "TUNING IN"
-    if m.previewNotice <> ""
-        text = m.previewNotice
-    else if m.previewStartedAt > 0
-        text = text + "  " + (nowSec - m.previewStartedAt).ToStr() + "s"
-        status = m.previewVideo.bufferingStatus
-        if type(status) = "roAssociativeArray"
-            if status.percentage <> invalid then text = text + "  ·  " + status.percentage.ToStr() + "%"
-        end if
-    end if
-    m.previewBadgeText.Text = text
-    m.previewBadge.Visible = true
+    m.previewBadge.Visible = false
+    showTuneCard(m.previewNotice)
 end sub
 
 sub updateBreakCard(channel as Object)
@@ -1625,12 +1643,12 @@ sub layoutBreakCard()
         m.breakText.Height = 720
         m.breakText.Font = "font:LargeBoldSystemFont"
     else
-        m.breakCard.Translation = [95, 94]
-        m.breakCard.Width = 374
-        m.breakCard.Height = 210
+        m.breakCard.Translation = [52, 89]
+        m.breakCard.Width = 338
+        m.breakCard.Height = 254
         m.breakText.Translation = [14, 0]
-        m.breakText.Width = 346
-        m.breakText.Height = 210
+        m.breakText.Width = 310
+        m.breakText.Height = 254
         m.breakText.Font = "font:SmallBoldSystemFont"
     end if
 end sub
@@ -2006,7 +2024,7 @@ sub renderPlaybackBanner()
     ' Now & next: what follows on the live schedule, and when.
     nextText = ""
     if m.behind = invalid and channel.next <> invalid then nextText = "NEXT  " + channel.next.title + "  ·  " + localTimeLabel(channel.next.startSec)
-    if m.playerNext.Text <> nextText then m.playerNext.Text = nextText
+    if m.playerNext.Text <> nextText then fitLabel(m.playerNext, nextText, "font:SmallSystemFont", [22, 20, 18, 16, 15, 14], 438, 24)
     position = 0
     duration = 0
     if program <> invalid
@@ -2118,6 +2136,10 @@ end sub
 ' point worked out now, so a show never restarts from an old position.
 sub startPreview(channel as Object)
     if m.idlePaused and not m.fullscreen then return
+    if m.previewMode = "off" and not m.fullscreen
+        if m.previewNotice <> "PREVIEW OFF" then previewOff()
+        return
+    end if
     ' Stay paused across a program change; resume picks up the new airing.
     if m.userPaused and m.fullscreen then return
     refreshChannelSchedule(channel)
@@ -2184,6 +2206,7 @@ sub openStream(program as Object, key as String, startAt as Integer)
     m.lastVideoPosition = -1.0
     m.previewSeekFixes = 0
     m.userSeeked = false
+    m.previewVideo.Mute = not m.fullscreen and m.previewMode = "muted"
     m.previewVideo.Content = content
     m.previewVideo.Control = "play"
     m.previewVideo.Visible = true
@@ -2203,6 +2226,11 @@ sub enterFullscreen()
         return
     end if
     m.fullscreen = true
+    m.previewVideo.Mute = false
+    rememberLastChannel(channel)
+    if m.previewNotice = "PREVIEW OFF" then m.previewNotice = ""
+    hideTuneCard()
+    layoutChannelOsd()
     m.previewTimer.Control = "stop"
     m.previewPending = false
     layoutBreakCard()
@@ -2274,13 +2302,16 @@ sub exitFullscreen()
     m.fullscreen = false
     m.playbackBannerTimer.Control = "stop"
     m.playerBanner.Visible = false
-    m.previewVideo.Translation = [95, 94]
-    m.previewVideo.Width = 374
-    m.previewVideo.Height = 210
+    m.previewVideo.Translation = [52, 89]
+    m.previewVideo.Width = 338
+    m.previewVideo.Height = 254
     hideGuideChrome(false)
     layoutBreakCard()
     layoutStatic()
+    layoutChannelOsd()
     if m.previewVideo.state = "playing" or m.breakCard.Visible then hideStatic() else showStatic()
+    ' Back in the guide: the preview setting applies again.
+    if m.previewMode = "off" then previewOff() else m.previewVideo.Mute = m.previewMode = "muted"
     updateTuningBadge(currentEpochSeconds())
     updateProgramInfo(m.channels[m.currentIndex])
     updateSubtitleTimer()
@@ -2346,6 +2377,12 @@ function onKeyEvent(key as String, press as Boolean) as Boolean
         resumeIdlePreview(true)
         return true
     end if
+    if m.zipOpen = true then return onZipKey(key)
+    if m.alertOpen
+        if onAlertKey(key) then return true
+    end if
+    if m.sheetMode <> "" then return onSheetKey(key)
+    if m.quickOpen then return onQuickKey(key)
     if m.directoryOpen then return onDirectoryKey(key)
     if m.panelOpen then return onSyncPanelKey(key)
     if m.fullscreen
@@ -2381,22 +2418,30 @@ function onKeyEvent(key as String, press as Boolean) as Boolean
             fullscreenChannelStep(1)
         else if key = "down"
             fullscreenChannelStep(-1)
+        else if key = "replay"
+            openQuick()
         else
             showPlaybackBanner()
         end if
         return true
     end if
     if m.scanOn = true and m.active
-        if key = "up" or key = "down"
-            if key = "down" then scanManualStep(1) else scanManualStep(-1)
+        if key = "up" or key = "down" or key = "left" or key = "right"
+            ' The first arrow press stops Scan where it is, with the cursor on the
+            ' channel at the top of the page; the next presses move as usual.
+            exitScan()
+            showChannel(m.rowTop, true)
             return true
         else if key = "play" or key = "back"
             ' Play turns Scan on and off; Back also ends it.
             exitScan()
             return true
-        else if key = "left" or key = "right"
-            ' A page is eight channels, as in the guide.
-            if key = "right" then scanManualStep(8) else scanManualStep(-8)
+        else if key = "OK"
+            ' Watch the highlighted channel if it's on screen; otherwise stop
+            ' Scan on this page so the next OK plays what the viewer picks.
+            slot = slotOfChannel(m.currentIndex)
+            exitScan()
+            if slot >= 0 and slot <= 7 then enterFullscreen()
             return true
         end if
     end if
@@ -2427,6 +2472,9 @@ function onKeyEvent(key as String, press as Boolean) as Boolean
         return true
     else if key = "options" and m.active
         openDirectory()
+        return true
+    else if key = "replay" and m.active
+        openOptions()
         return true
     else if key = "options" or key = "replay"
         if not m.active
@@ -2464,6 +2512,7 @@ sub buildDirectoryCards()
         logo.Width = 54
         logo.Height = 54
         logo.LoadDisplayMode = "scaleToFit"
+        star = addFavoriteStar(card, 144, 2, 20)
         name = dirLabel(card, 168, 12, 416, 30, "font:MediumBoldSystemFont", "0xFFE22EFF")
         family = dirLabel(card, 169, 42, 200, 18, "font:SmallestSystemFont", "0x99A3CCFF")
         description = dirLabel(card, 16, 66, 568, 112, "font:SmallSystemFont", "0xE8EAF0FF")
@@ -2473,9 +2522,10 @@ sub buildDirectoryCards()
         nowLabel = dirLabel(card, 16, 197, 200, 18, "font:SmallestBoldSystemFont", "0xFFD740FF")
         nowLabel.Text = "NOW PLAYING"
         nowTitle = dirLabel(card, 16, 214, 568, 22, "font:SmallSystemFont", "0xE8EAF0FF")
-        tune = dirButton(card, 16, 240, 236, "TUNE IN", "0xB8500EFF", "0xFFE22EFF")
-        view = dirButton(card, 262, 240, 322, "VIEW CHANNEL", "0x2B2FC4FF", "0xFFFFFFFF")
-        m.dirViews.Push({group: card, border: border, dial: dial, dialShadow: dialShadow, logo: logo, name: name, family: family, description: description, stats: stats, nowLabel: nowLabel, nowTitle: nowTitle, buttons: [tune, view]})
+        tune = dirButton(card, 16, 240, 170, "TUNE IN", "0xB8500EFF", "0xFFE22EFF")
+        view = dirButton(card, 196, 240, 206, "VIEW CHANNEL", "0x2B2FC4FF", "0xFFFFFFFF")
+        plan = dirButton(card, 412, 240, 172, "SCHEDULE", "0x2B2FC4FF", "0xFFFFFFFF")
+        m.dirViews.Push({group: card, border: border, dial: dial, dialShadow: dialShadow, logo: logo, star: star, name: name, family: family, description: description, stats: stats, nowLabel: nowLabel, nowTitle: nowTitle, buttons: [tune, view, plan]})
     end for
 end sub
 
@@ -2484,7 +2534,7 @@ function dirBox(parent as Object, x as Integer, y as Integer, w as Integer, h as
     rect.Translation = [x, y]
     rect.Width = w
     rect.Height = h
-    rect.Color = color
+    sc(rect, "Color", color)
     return rect
 end function
 
@@ -2494,7 +2544,7 @@ function dirLabel(parent as Object, x as Integer, y as Integer, w as Integer, h 
     label.Width = w
     label.Height = h
     if fontName <> "" then label.Font = fontName
-    label.Color = color
+    sc(label, "Color", color)
     return label
 end function
 
@@ -2550,6 +2600,7 @@ sub renderDirectory()
                 view.dial.Text = channel.dial
                 view.dialShadow.Text = channel.dial
                 view.logo.Uri = channel.logoUri
+                view.star.Visible = isFavorite(channel)
                 view.name.Text = channel.name
                 view.family.Text = channel.family
                 fitDirectoryDescription(view.description, channel.description)
@@ -2605,18 +2656,18 @@ sub updateDirectoryFocus()
         view = m.dirViews[slot]
         focused = slot = focusSlot
         if focused
-            view.border.Color = "0xFFD740FF"
+            sc(view.border, "Color", "0xFFD740FF")
         else
-            view.border.Color = "0x3157A5FF"
+            sc(view.border, "Color", "0x3157A5FF")
         end if
-        for buttonIndex = 0 to 1
+        for buttonIndex = 0 to view.buttons.Count() - 1
             button = view.buttons[buttonIndex]
             if focused and buttonIndex = m.dirButton
-                button.outline.Color = "0xFFF6A0FF"
-                if buttonIndex = 0 then button.face.Color = "0xE0700FFF" else button.face.Color = "0x4A50F0FF"
+                sc(button.outline, "Color", "0xFFF6A0FF")
+                if buttonIndex = 0 then sc(button.face, "Color", "0xE0700FFF") else sc(button.face, "Color", "0x4A50F0FF")
             else
-                button.outline.Color = "0x14153AFF"
-                button.face.Color = button.fill
+                sc(button.outline, "Color", "0x14153AFF")
+                sc(button.face, "Color", button.fill)
             end if
         end for
     end for
@@ -2651,7 +2702,7 @@ function onDirectoryKey(key as String) as Boolean
         requestSchedules()
         return true
     else if key = "OK"
-        selectDirectoryChannel(m.dirIndex, m.dirButton = 0)
+        if m.dirButton = 2 then openSchedule(m.dirIndex) else selectDirectoryChannel(m.dirIndex, m.dirButton = 0)
         return true
     else if key = "up"
         target = m.dirIndex - 2
@@ -2660,15 +2711,15 @@ function onDirectoryKey(key as String) as Boolean
         ' The last row can be a single card.
         if target >= count and Int(m.dirIndex / 2) < Int((count - 1) / 2) then target = count - 1
     else if key = "left"
-        if button = 1
-            button = 0
+        if button > 0
+            button = button - 1
         else if column = 1
             target = m.dirIndex - 1
-            button = 1
+            button = 2
         end if
     else if key = "right"
-        if button = 0
-            button = 1
+        if button < 2
+            button = button + 1
         else if column = 0 and m.dirIndex + 1 < count
             target = m.dirIndex + 1
             button = 0
@@ -2720,6 +2771,7 @@ sub onTick()
     end if
     ' The now line and the listings creep left with the clock (whole pixels).
     if m.stripGlide.State <> "running" then updateTimeStrip(nowSec, false)
+    if m.channels.Count() > 0 then checkReminders(nowSec)
     if not m.active then return
     if m.directoryOpen
         ' The preview is stopped while the directory covers it; only the cards'
@@ -2826,7 +2878,7 @@ sub onMinuteChanged(nowSec as Integer, localHour as Integer, minute as Integer, 
     if Len(minutes) = 1 then minutes = "0" + minutes
     ' m.clock is in local time here (onTick converts it before calling).
     dateText = m.clock.GetMonth().ToStr() + "/" + m.clock.GetDayOfMonth().ToStr()
-    m.clockLabel.Text = dateText + "   " + hours.ToStr() + ":" + minutes + " " + suffix
+    m.clockLabel.Text = dateText + "   " + clockText(localHour, minute)
     hourStart = nowSec - minute * 60 - second
     if hourStart <> m.hourStartSec
         m.hourStartSec = hourStart
@@ -2841,6 +2893,8 @@ sub onMinuteChanged(nowSec as Integer, localHour as Integer, minute as Integer, 
     else if m.active and not m.fullscreen
         refreshRowHighlights()
     end if
+    ' Weather every half hour.
+    if minute mod 30 = 0 and m.active then requestWeather()
 end sub
 
 sub refreshRowHighlights()

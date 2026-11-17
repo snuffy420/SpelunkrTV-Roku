@@ -1,4 +1,4 @@
-# Building Spelunkr TV Guide 1.9.4
+# Building Spelunkr TV Guide 1.9.8
 
 ## Roku ZIP
 
@@ -8,7 +8,7 @@ Python 3.12 or newer is enough to package the app:
 python tools/package.py
 ```
 
-Output: `releases/spelunkr-tv-guide-v1.9.4-roku.zip` and its SHA-256 sidecar. The ZIP holds `manifest`, `source`, `components` and `images` at its root; SVG/GIF sources, docs and tools are left out. The version comes from `manifest`.
+Output: `releases/spelunkr-tv-guide-v1.9.8-roku.zip` and its SHA-256 sidecar. The ZIP holds `manifest`, `source`, `components` and `images` at its root; SVG/GIF sources, docs and tools are left out. The version comes from `manifest`.
 
 ## Source archive
 
@@ -34,9 +34,17 @@ The guide only lists channels named in `directoryIds` in `components/GuideTask.b
 
 `images/hints/` holds the remote-button icons shown in the button hints, drawn by `tools/build_hint_icons.py` (needs Pillow). They are styled after the Roku remote; run the script again after changing a glyph or colour.
 
-## Splash screen
+## Splash screen and icons
 
-`images/splash-art.svg` holds the splash background and text; `images/splash_hd.png` (1280×720) and `images/splash_fhd.png` (1920×1080) are the packaged images, with the Spelunkr mark above the title.
+`tools/build_store_icon.py` draws the home-screen and store icons (the S mark over a greyed collage of the channel logos) into `assets/store/`, copied to `images/icon_fhd.png` and `images/icon_hd.png`. With `--splash` it also draws `images/splash_fhd.png` and `images/splash_hd.png` in the same style, stamped with the manifest's version (or the version given after `--splash`):
+
+```bash
+python tools/build_store_icon.py --splash
+```
+
+## Themes and weather icons
+
+`tools/build_themes.py` draws the backgrounds, headers and rounded panel frames for the Glass, Neon, Spelunkr Neon and Channel Color themes into `images/themes/`; each theme's colours live in `components/Themes.brs`. `tools/build_weather_icons.py` draws the header's weather icons into `images/weather/`. Both need Pillow.
 
 ## Broadcast timing
 

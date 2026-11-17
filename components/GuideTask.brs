@@ -104,6 +104,11 @@ sub runScheduleWorker()
     m.top.ObserveField("cueRequest", m.port)
     ' The scene may have queued its first request before this thread got here.
     workerReplaceQueue(m.top.scheduleQueue)
+    ' Likewise a weather request sent while this thread was starting.
+    early = m.top.cueRequest
+    if type(early) = "roAssociativeArray"
+        if early.kind = "weather" then workerWeather(early)
+    end if
     ' One bad request must never end listing updates for the whole app, so each
     ' turn of the loop catches and logs its own errors.
     while true
@@ -113,7 +118,10 @@ sub runScheduleWorker()
             message = Wait(250, m.port)
             if type(message) = "roSGNodeEvent"
                 if message.GetField() = "cueRequest"
-                    if type(message.GetData()) = "roAssociativeArray" then m.queue.Unshift(message.GetData())
+                    request = message.GetData()
+                    if type(request) = "roAssociativeArray"
+                        if request.kind = "weather" then workerWeather(request) else m.queue.Unshift(request)
+                    end if
                 else
                     workerReplaceQueue(message.GetData())
                 end if
@@ -202,6 +210,8 @@ sub workerStartRequests()
         transfer.SetMessagePort(m.port)
         if transfer.AsyncGetToString()
             m.inFlight[transfer.GetIdentity().ToStr()] = {transfer: transfer, entry: entry, startedMs: m.elapsedTimer.TotalMilliseconds()}
+        else if entry.kind = "day"
+            workerEmit({dayFor: entry.id, ok: false, events: []})
         else
             workerEmit({id: entry.id, ok: false})
         end if
@@ -249,9 +259,22 @@ sub workerHandleResponse(event as Object)
                     if entry.fromSec <> invalid
                         if entry.fromSec < windowStartSec and entry.fromSec > nowSec - 90000 then windowStartSec = entry.fromSec
                     end if
+                    ' A channel's schedule page: what is on now and the next 24 hours.
+                    ' Its own result, so the guide's listings stay as they are.
+                    if entry.kind = "day"
+                        windowStartSec = nowSec - 14400
+                        windowEndSec = nowSec + 86400
+                    end if
                     result = workerBuildSchedule(manifest, entry, nowSec, windowStartSec, windowEndSec)
                 end if
             end if
+        end if
+        if entry.kind = "day"
+            if result = invalid then result = {ok: false, events: []}
+            workerEmit({dayFor: entry.id, ok: result.ok = true, events: result.events})
+            if result.ok = true then workerQueueDetails(entry, result.events)
+            m.nextBackgroundMs = m.elapsedTimer.TotalMilliseconds() + 150
+            return
         end if
         if result = invalid then result = {id: entry.id, ok: false}
         workerEmit(result)
@@ -622,6 +645,7 @@ sub workerExpireRequests()
             request.transfer.AsyncCancel()
             m.inFlight.Delete(key)
             if request.entry.kind = "manifest" then workerEmit({id: request.entry.id, ok: false})
+            if request.entry.kind = "day" then workerEmit({dayFor: request.entry.id, ok: false, events: []})
         end if
     end for
 end sub
@@ -830,4 +854,81 @@ function spelunkrPathEscape(value as String) as String
     ' other reserved characters. Encode the complete filename as one URL path
     ' component (UTF-8), rather than leaving Roku with a malformed URL.
     return value.EncodeUriComponent()
+end function
+
+' ---- Weather for the guide header (Options > Weather) ----------------------------
+' The ZIP code becomes a place with Zippopotam.us, then Open-Meteo gives the
+' current temperature and conditions. Both are free and need no key; only the
+' ZIP code and that place's coordinates are sent.
+sub workerWeather(request as Object)
+    if m.weatherPlaces = invalid then m.weatherPlaces = {}
+    country = LCase(request.country)
+    if country = "" then country = "us"
+    zip = workerPostcode(country, request.zip)
+    key = country + "/" + zip
+    place = m.weatherPlaces[key]
+    ' Zippopotam.us first where it covers the country (exact postcodes), then
+    ' Open-Meteo's place search, which takes postcodes or town names nearly anywhere.
+    if place = invalid and workerZippoCountry(country)
+        found = spelunkrJson("https://api.zippopotam.us/" + key)
+        if type(found) = "roAssociativeArray" and type(found.places) = "roArray"
+            if found.places.Count() > 0
+                first = found.places[0]
+                place = {lat: first["latitude"], lon: first["longitude"], name: first["place name"]}
+            end if
+        end if
+    end if
+    if place = invalid
+        name = request.zip.Trim().Replace(" ", "%20")
+        found = spelunkrJson("https://geocoding-api.open-meteo.com/v1/search?count=1&language=en&format=json&countryCode=" + UCase(country) + "&name=" + name)
+        if type(found) = "roAssociativeArray" and type(found.results) = "roArray"
+            if found.results.Count() > 0
+                first = found.results[0]
+                place = {lat: first.latitude.ToStr(), lon: first.longitude.ToStr(), name: textOfWeather(first.name)}
+            end if
+        end if
+    end if
+    if place <> invalid then m.weatherPlaces[key] = place
+    if place = invalid
+        workerEmit({weather: {ok: false, reason: "zip"}})
+        return
+    end if
+    unit = "fahrenheit"
+    if request.unit = "C" then unit = "celsius"
+    url = "https://api.open-meteo.com/v1/forecast?latitude=" + place.lat + "&longitude=" + place.lon + "&current=temperature_2m,weather_code,is_day&temperature_unit=" + unit
+    data = spelunkrJson(url)
+    if type(data) <> "roAssociativeArray" or type(data.current) <> "roAssociativeArray"
+        workerEmit({weather: {ok: false, reason: "network"}})
+        return
+    end if
+    now = data.current
+    workerEmit({weather: {ok: true, temp: now.temperature_2m, code: now.weather_code, day: now.is_day, place: place.name}})
+end sub
+
+' A postcode in the form Zippopotam.us looks up: Canada and the UK by their first
+' part (M5V, SW1A), the Netherlands by its four digits, others as typed.
+function workerPostcode(country as String, code as String) as String
+    code = UCase(code.Trim())
+    if country = "ca"
+        return Left(code.Replace(" ", ""), 3)
+    else if country = "gb"
+        space = Instr(1, code, " ")
+        if space > 0 then return Left(code, space - 1)
+        if Len(code) > 4 then return Left(code, Len(code) - 3)
+        return code
+    else if country = "nl"
+        return Left(code.Replace(" ", ""), 4)
+    end if
+    return code.Replace(" ", "%20")
+end function
+
+' Countries Zippopotam.us has postcodes for.
+function workerZippoCountry(country as String) as Boolean
+    list = "ad ar as at au bd be bg br ca ch cz de dk do es fi fo fr gb gf gg gl gp gt gu gy hr hu im in is it je jp li lk lt lu mc md mh mk mp mq mx my nl no nz ph pk pl pm pr pt re ru se si sj sk sm th tr us va vi yt za"
+    return Instr(1, " " + list + " ", " " + country + " ") > 0
+end function
+
+function textOfWeather(value as Dynamic) as String
+    if value = invalid then return ""
+    return value
 end function
