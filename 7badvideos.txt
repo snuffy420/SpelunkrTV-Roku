@@ -1,0 +1,17 @@
+Roku can't join 7 tapes on SATURDAY MORNING (02) live. All are YouCut exports (CN Saturday Mornings / Crushzone, 2009-2011).
+
+Cause: their video track uses a 1,000,000 Hz timescale, so tapes longer than 71.6 min need a 64-bit duration (mdhd v1). Roku's player keeps only the low 32 bits, so it thinks each tape is much shorter. Opening (PlayStart) or seeking past that point fails (-3 "sample number too large" / -5 "demux get sample error"); playing straight through works. Tested on a Roku TV, OS 16.0.4; the predicted limits matched to the second.
+
+Affected archive items, real length, Roku's limit:
+- you-cut-20231009-165607881: 5:11, 24 min
+- you-cut-20231024-000344535: 4:34, 59 min
+- you-cut-20231013-010209175: 3:40, 4.6 min
+- you-cut-20231020-173459789: 4:18, 43.5 min
+- you-cut-20231008-212344205: 4:45, 70 min
+- you-cut-20231012-214855121: 4:25, 50 min
+- you-cut-20231021-180456155: 4:11, 36 min
+
+I scanned all 906 files over 71.6 min in the current manifests: only these 7 are affected.
+
+Likely fix (untested on a Roku): remux with a lower timescale, no re-encode:
+ffmpeg -i in.mp4 -c copy -movflags +faststart -video_track_timescale 30000 out.mp4

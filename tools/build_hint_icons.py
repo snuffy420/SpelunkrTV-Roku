@@ -104,6 +104,16 @@ def main():
     def star(d, w, h):
         d.text((w / 2, h * 0.64), "*", font=font(int(26 * SCALE)), fill=GLYPH, anchor="mm")
     button(36, star, "star")
+
+    def replay(d, w, h):
+        # The Replay button: an open circle with an arrowhead, turning back.
+        lw = int(3 * SCALE)
+        r = g * 0.55
+        cx, cy = w / 2, h / 2
+        # Open at the top left; the arrowhead at the top points left (counter-clockwise).
+        d.arc([cx - r, cy - r, cx + r, cy + r], start=290, end=200, fill=GLYPH, width=lw)
+        tri(d, cx + r * 0.10, cy - r * 0.97, g * 0.6, "left")
+    button(36, replay, "replay")
     print("icons written to", OUT)
 
 

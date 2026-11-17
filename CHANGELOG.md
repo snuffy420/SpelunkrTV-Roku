@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.9.8 - November 17, 2026
+
+- **Options:** Replay in the guide (the new OPTIONS button) opens Options: theme, favorites, settings, reminders, What's new and About Spelunkr.
+- **Favorites:** mark the channel you're on in Options; a gold star shows on its logo in the guide, directory and quick list, and Left/Right in the quick list switch between all channels and favorites.
+- **Weather (optional):** the current temperature and conditions in the guide header, with new icons. Enter a ZIP code, postcode or town for any country on a themed number pad or QWERTY keyboard; it refreshes every 30 minutes.
+- **Settings:** start on the last channel, first favorite or first channel; 12- or 24-hour clock; guide preview with sound, muted or off; Scan speed; subtitles on or off (now on by default; a saved choice is kept); screensaver after 5, 15 or 30 minutes.
+- **Preview and tuning:** a bigger 4:3 preview; a big outlined channel number while flipping (preview and full screen); a STAND BY card with a loading progress bar.
+- **Themes:** Classic, Glass (frosted 3D panels in Spelunkr's colours), Neon (glowing outlines on a plain dark background) and Spelunkr Neon (Spelunkr's orange and blue as glowing light on near-black) and Channel Color (the whole guide takes the selected channel's colour and fades to the next as you move). The choice is remembered.
+- **Channel schedules:** every directory card has a SCHEDULE button with the channel's next 24 hours, in local time.
+- **Reminders:** OK on a program in a schedule sets a reminder. While the app is open, a card pops up 15 minutes before the program starts (OK tunes in, Back dismisses). Options lists reminders and can remove them all.
+- **Quick channel list:** Replay while watching full screen lists every channel with what's on now. The video keeps playing until OK picks one; Back or Replay closes it. Up/Down still change channels as before.
+- **What's new and About:** Options shows what changed in each version, and an About Spelunkr section covering the station, the Internet Archive and spelunkr.tv/about.
+- **Scan:** stopping Scan keeps the page you're looking at. The first arrow press stops it with the cursor on the top channel, and Back, Play/Pause or OK no longer jump back to a channel that rolled off screen.
+- New splash screen and home-screen icon (the S mark over the channel-logo collage); slimmer guide buttons along the bottom.
+
 ## 1.9.4 - November 14, 2026
 
 - New channel: HENSHIN on 301, with Japanese commercials in its breaks.
