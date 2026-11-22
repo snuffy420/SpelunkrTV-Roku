@@ -15,7 +15,7 @@ Spelunkr TV Guide puts [Spelunkr](https://spelunkr.tv/)'s always-on retro channe
 
 ### From the Roku Channel Store
 
-The easiest way: install **Spelunkr TV Guide (Unofficial)** from the Roku Channel Store, like any other Roku app. There's no developer mode or computer involved, and Roku keeps it up to date for you. You can also find it by searching the Channel Store on your Roku for "Spelunkr".
+The easiest way: install **Spelunkr TV Guide (Unofficial)** from the Roku Channel Store, like any other Roku app. There's no developer mode or computer involved, and Roku keeps it up to date for you. You can also find it by searching the Channel Store on your Roku for "Spelunkr". 1.9.9 update will be live on 11/30!
 
 **[Get Spelunkr TV Guide on the Roku Channel Store](https://channelstore.roku.com/details/d0f119c3a7c09889197e96b29aa2ed65:4c8d28d1aa95bcad149caffdb9c9bada/unofficial-spelunkrtv-guide)**
 
