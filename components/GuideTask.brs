@@ -22,7 +22,7 @@ sub loadSpelunkrGuide()
     output = []
     ' Keep the guide aligned with the public directory. The upstream lineup
     ' also contains internal/test feeds that are intentionally not listed there.
-    directoryIds = ["saturday-morning", "primetime", "syndicate", "late-nite-local", "happy-trees", "computer-chronicles", "open-mic", "library-card", "nature-preserve", "unpaid-programming", "radio-active-tv", "orange-soda", "latchkey-tv", "kersplat", "final-frontier", "rocket-punch", "ovatv", "toonertia", "late-nite-swimclub", "warp-zone", "homeroom", "mandatory-viewing", "fallout-shelter", "dusty-trails", "gumshoe", "it-came-from", "daily-dread", "graveyard-shift", "ray-gun", "signpost", "waku-waku", "henshin", "rubber-hose", "meddling-kids", "suplex", "vacation-slides"]
+    directoryIds = ["saturday-morning", "primetime", "syndicate", "late-nite-local", "happy-trees", "computer-chronicles", "open-mic", "library-card", "nature-preserve", "unpaid-programming", "radio-active-tv", "orange-soda", "latchkey-tv", "kersplat", "final-frontier", "rocket-punch", "ovatv", "toonertia", "late-nite-swimclub", "warp-zone", "homeroom", "mandatory-viewing", "fallout-shelter", "dusty-trails", "gumshoe", "it-came-from", "daily-dread", "graveyard-shift", "ray-gun", "signpost", "waku-waku", "henshin", "come-on-down", "rubber-hose", "meddling-kids", "suplex", "vacation-slides"]
     for each channel in lineup.channels
         if not spelunkrIsDirectoryChannel(channel.id, directoryIds) then continue for
         dial = spelunkrText(channel.dial)

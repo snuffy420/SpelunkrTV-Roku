@@ -336,6 +336,11 @@ end sub
 ' What changed, for viewers who never see the GitHub page. Newest first.
 function whatsNewPages() as Object
     return [
+        {heading: "version 1.9.9", lines: [
+            "NEW CHANNEL",
+            "COME ON DOWN is on 302: the old luck and price shows, all day, with commercials from the same era in its breaks.",
+            "",
+            "Find it in the directory (*) with its description and a SCHEDULE page, like every other channel. Its schedule fills in on its own."]},
         {heading: "version 1.9.8", lines: [
             "OPTIONS",
             "Press Replay in the guide (the OPTIONS button) for themes, favorites, settings, reminders, this list and About Spelunkr.",

@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.9.9 - November 21, 2026
+
+- New channel: COME ON DOWN on 302: Spelunkr's old luck and price shows (1950s to 1990s), with 1970s to 1990s commercials in its breaks. It's in the directory with its description and a SCHEDULE page, and shows in the guide, the quick channel list, favorites, reminders and the Channel Color theme like every other channel.
+- What's new in Options lists it.
+
 ## 1.9.8 - November 17, 2026
 
 - **Options:** Replay in the guide (the new OPTIONS button) opens Options: theme, favorites, settings, reminders, What's new and About Spelunkr.

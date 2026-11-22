@@ -1,21 +1,21 @@
-<p align="center"><img src="assets/icon.png" alt="Spelunkr TV Guide icon" width="112"></p>
+<p align="center"><img src="assets/icon.png" alt="Spelunkr TV Guide icon" width="270"></p>
 <h1 align="center">Spelunkr TV Guide (Unofficial)</h1>
 <p align="center"><strong>Unofficial Roku app for the Spelunkr live channel lineup</strong></p>
-<p align="center">Scrolling live guide · Scan · Schedules &amp; reminders · Themes · Channel directory · Version 1.9.8</p>
+<p align="center">Scrolling live guide · Scan · Schedules &amp; reminders · Themes · Channel directory · Version 1.9.9</p>
 <p align="center"><strong>Now on the <a href="https://channelstore.roku.com/details/d0f119c3a7c09889197e96b29aa2ed65:4c8d28d1aa95bcad149caffdb9c9bada/unofficial-spelunkrtv-guide">Roku Channel Store</a>: install it like any other Roku app, no developer mode needed.</strong></p>
 
 > **Unofficial app.** Spelunkr TV Guide for Roku is an independent, fan-made client. It is not made, endorsed or supported by [Spelunkr](https://spelunkr.tv/). Channel names, logos, descriptions and schedules belong to Spelunkr and its sources, and are read from Spelunkr's public guide data while the app runs.
 
 Spelunkr TV Guide puts [Spelunkr](https://spelunkr.tv/)'s always-on retro channels on your TV in a printed-guide style lineup. Every channel runs on the wall clock, so tuning in joins the program where the broadcast is right now, station breaks included, just like on the website.
 
-![Spelunkr TV Guide 1.9.8 splash screen](assets/splash.png)
-<p align="center"><em>The 1.9.8 splash screen, as packaged in the Roku ZIP.</em></p>
+![Spelunkr TV Guide 1.9.9 splash screen](assets/splash.png)
+<p align="center"><em>The 1.9.9 splash screen, as packaged in the Roku ZIP.</em></p>
 
 ## Download and install
 
 ### From the Roku Channel Store
 
-The easiest way: install **Spelunkr TV Guide (Unofficial)** from the Roku Channel Store, like any other Roku app. There's no developer mode or computer involved, and Roku keeps it up to date for you. You can also find it by searching the Channel Store on your Roku for "Spelunkr". The Roku store may be a version behind GitHub as it takes a day to publish a new update to the Roku store.
+The easiest way: install **Spelunkr TV Guide (Unofficial)** from the Roku Channel Store, like any other Roku app. There's no developer mode or computer involved, and Roku keeps it up to date for you. You can also find it by searching the Channel Store on your Roku for "Spelunkr".
 
 **[Get Spelunkr TV Guide on the Roku Channel Store](https://channelstore.roku.com/details/d0f119c3a7c09889197e96b29aa2ed65:4c8d28d1aa95bcad149caffdb9c9bada/unofficial-spelunkrtv-guide)**
 
@@ -25,17 +25,17 @@ Sideloading is for trying a build before it reaches the Channel Store, or for de
 
 | Package | What you get | Download |
 | --- | --- | --- |
-| **Roku ZIP** | The sideloadable app; upload this ZIP directly to your Roku | [spelunkr-tv-guide-v1.9.8-roku.zip](https://github.com/snuffy420/SpelunkrTV-Roku/releases/download/v1.9.8/spelunkr-tv-guide-v1.9.8-roku.zip) |
-| **Source 7z** | Editable BrightScript, artwork, build tools and documentation | [spelunkr-tv-guide-v1.9.8-source.7z](https://github.com/snuffy420/SpelunkrTV-Roku/releases/download/v1.9.8/spelunkr-tv-guide-v1.9.8-source.7z) |
+| **Roku ZIP** | The sideloadable app; upload this ZIP directly to your Roku | [spelunkr-tv-guide-v1.9.9-roku.zip](https://github.com/snuffy420/SpelunkrTV-Roku/releases/download/v1.9.9/spelunkr-tv-guide-v1.9.9-roku.zip) |
+| **Source 7z** | Editable BrightScript, artwork, build tools and documentation | [spelunkr-tv-guide-v1.9.9-source.7z](https://github.com/snuffy420/SpelunkrTV-Roku/releases/download/v1.9.9/spelunkr-tv-guide-v1.9.9-source.7z) |
 
-Checksums sit beside both downloads on the [release page](https://github.com/snuffy420/SpelunkrTV-Roku/releases/tag/v1.9.8). The source archive is for development; the Roku installer needs the Roku ZIP.
+Checksums sit beside both downloads on the [release page](https://github.com/snuffy420/SpelunkrTV-Roku/releases/tag/v1.9.9). The source archive is for development; the Roku installer needs the Roku ZIP.
 
 ### Sideload on Roku
 
 1. Enable Developer Mode: press **Home** three times, **Up** twice, then **Right, Left, Right, Left, Right**. Follow the TV prompts, set an installer password, and note the Roku IP address.
 2. From a computer on the same network, open `http://ROKU_IP` in your browser.
 3. Sign in as `rokudev` using your installer password.
-4. Select **Upload**, choose `spelunkr-tv-guide-v1.9.8-roku.zip`, then select **Install**.
+4. Select **Upload**, choose `spelunkr-tv-guide-v1.9.9-roku.zip`, then select **Install**.
 5. Open **Spelunkr TV Guide (Unofficial)**. Reinstalling replaces the existing sideloaded app. A sideloaded copy and the Channel Store copy are separate apps.
 
 See [Roku's developer setup](https://developer.roku.com/docs/developer-program/getting-started/developer-setup.md) for the official instructions.

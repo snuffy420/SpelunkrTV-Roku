@@ -159,14 +159,10 @@ def splash(w, h, version, master_collage):
 
 def main():
     import sys
-    os.makedirs(OUT, exist_ok=True)
-    base = collage(2160, 1620)
-    for w, h in [(2160, 1620), (540, 405), (290, 218)]:
-        path = os.path.join(OUT, "spelunkr-icon-%dx%d.png" % (w, h))
-        icon(w, h, base).save(path, optimize=True)
-        print(path)
-    # Splash screens: --splash [VERSION] writes images/splash_fhd.png and splash_hd.png
-    # (version defaults to the manifest's).
+    # Splash screens: --splash [VERSION] writes only images/splash_fhd.png and
+    # splash_hd.png (version defaults to the manifest's). The icons are left alone:
+    # their collage changes whenever a channel is added, and the store icon must
+    # keep matching the approved images/icon_fhd.png and icon_hd.png.
     if "--splash" in sys.argv:
         at = sys.argv.index("--splash")
         version = sys.argv[at + 1] if len(sys.argv) > at + 1 else manifest_version()
@@ -175,6 +171,19 @@ def main():
             path = os.path.join(ROOT, "images", name)
             splash(w, h, version, wide).save(path, optimize=True)
             print(path)
+        return
+    os.makedirs(OUT, exist_ok=True)
+    base = collage(2160, 1620)
+    for w, h in [(2160, 1620), (540, 405), (290, 218)]:
+        path = os.path.join(OUT, "spelunkr-icon-%dx%d.png" % (w, h))
+        icon(w, h, base).save(path, optimize=True)
+        print(path)
+    # The README shows the same tile as the Roku home screen; the contact page
+    # header needs a square one.
+    icon(540, 405, base).save(os.path.join(ROOT, "assets", "icon.png"), optimize=True)
+    icon(512, 512, collage(1024, 1024)).save(os.path.join(ROOT, "docs", "icon.png"), optimize=True)
+    print(os.path.join(ROOT, "assets", "icon.png"))
+    print(os.path.join(ROOT, "docs", "icon.png"))
 
 
 if __name__ == "__main__":
