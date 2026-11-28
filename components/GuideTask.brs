@@ -22,10 +22,13 @@ sub loadSpelunkrGuide()
     output = []
     ' Keep the guide aligned with the public directory. The upstream lineup
     ' also contains internal/test feeds that are intentionally not listed there.
-    directoryIds = ["saturday-morning", "primetime", "syndicate", "late-nite-local", "happy-trees", "computer-chronicles", "open-mic", "library-card", "nature-preserve", "unpaid-programming", "radio-active-tv", "orange-soda", "latchkey-tv", "kersplat", "final-frontier", "rocket-punch", "ovatv", "toonertia", "late-nite-swimclub", "warp-zone", "homeroom", "mandatory-viewing", "fallout-shelter", "dusty-trails", "gumshoe", "it-came-from", "daily-dread", "graveyard-shift", "ray-gun", "signpost", "waku-waku", "henshin", "come-on-down", "rubber-hose", "meddling-kids", "suplex", "vacation-slides"]
+    directoryIds = ["saturday-morning", "primetime", "syndicate", "late-nite-local", "happy-trees", "computer-chronicles", "open-mic", "library-card", "nature-preserve", "unpaid-programming", "radio-active-tv", "orange-soda", "latchkey-tv", "kersplat", "final-frontier", "rocket-punch", "ovatv", "toonertia", "late-nite-swimclub", "warp-zone", "homeroom", "mandatory-viewing", "fallout-shelter", "dusty-trails", "gumshoe", "it-came-from", "daily-dread", "graveyard-shift", "ray-gun", "signpost", "waku-waku", "henshin", "robot-roll-call", "come-on-down", "rubber-hose", "meddling-kids", "suplex", "vacation-slides"]
     for each channel in lineup.channels
         if not spelunkrIsDirectoryChannel(channel.id, directoryIds) then continue for
         dial = spelunkrText(channel.dial)
+        ' Robot Roll Call launched after the source list was published; its official
+        ' dial is 205, while lineup.json currently omits the dial field for it.
+        if channel.id = "robot-roll-call" and dial = "" then dial = "205"
         if Len(dial) = 1 then dial = "0" + dial
         ' Only what the guide draws crosses to the render thread. Logos ship as
         ' PNGs in the package (tools/build_assets.py), so their pixel rows do not.
@@ -39,6 +42,17 @@ sub loadSpelunkrGuide()
         familyText = ""
         if LCase(spelunkrText(channel.family)) = "rewind" then familyText = "REWIND"
         output.Push({id: channel.id, name: channel.name, description: spelunkrText(channel.description), family: familyText, stats: statsText, dial: dial, color: channel.color, logoUri: "pkg:/images/logos/" + channel.id + ".png", schedule: spelunkrCurrentVersion(channel.versions, nowSec), timeline: [], timelineLoaded: false, timelineEndSec: 0, nowIndex: 0, now: invalid, next: invalid, elapsed: 0, descriptions: {}})
+    end for
+    ' Upstream appended the new 205 entry after channel 600. Keep every surface
+    ' (guide, directory, quick list and schedules) in dial order.
+    for i = 0 to output.Count() - 2
+        for j = i + 1 to output.Count() - 1
+            if Val(output[j].dial) < Val(output[i].dial)
+                swap = output[i]
+                output[i] = output[j]
+                output[j] = swap
+            end if
+        end for
     end for
     m.top.subtitlesPath = spelunkrText(lineup.subtitles)
     m.top.channels = output

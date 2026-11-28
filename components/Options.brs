@@ -336,6 +336,11 @@ end sub
 ' What changed, for viewers who never see the GitHub page. Newest first.
 function whatsNewPages() as Object
     return [
+        {heading: "version 2.0.0", lines: [
+            "NEW CHANNEL · 205",
+            "ROBOT ROLL CALL is on the dial: Mystery Science Theater 3000, as it aired, all day.",
+            "",
+            "Find it in the channel directory with its live description and SCHEDULE page. Its guide, schedule, preview, quick channel list, favorites and reminders use the same live data as every other channel."]},
         {heading: "version 1.9.9", lines: [
             "NEW CHANNEL",
             "COME ON DOWN is on 302: the old luck and price shows, all day, with commercials from the same era in its breaks.",

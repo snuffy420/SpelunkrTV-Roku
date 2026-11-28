@@ -13,9 +13,11 @@ def version():
     major = re.search(r"major_version=(\d+)", manifest).group(1)
     minor = re.search(r"minor_version=(\d+)", manifest).group(1)
     build = re.search(r"build_version=(\d+)", manifest)
-    # A patch release (build_version > 0) is named 1.7.1; otherwise 1.7.
-    if build and int(build.group(1)) > 0:
-        return f"{major}.{minor}.{int(build.group(1))}"
+    patch = int(build.group(1)) if build else 0
+    # Keep the established 1.x names (1.0 rather than 1.0.0), and use the
+    # full semantic version for the 2.0 major release and later.
+    if patch > 0 or int(major) >= 2:
+        return f"{major}.{minor}.{patch}"
     return f"{major}.{minor}"
 
 

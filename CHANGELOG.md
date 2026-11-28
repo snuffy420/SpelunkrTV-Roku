@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.0.0 - November 27, 2026
+
+- Added ROBOT ROLL CALL on channel 205 to the official directory lineup. Its description, channel logo and live schedule are loaded through the same public Spelunkr data pipeline used by the other channels; it appears in the guide, directory, channel schedules, quick list, favorites and reminders.
+- Kept guide and directory order aligned to channel dial numbers when the upstream lineup appends a new channel.
+- Updated the splash screen and app version to 2.0.0.
+
 ## 1.9.9 - November 21, 2026
 
 - New channel: COME ON DOWN on 302: Spelunkr's old luck and price shows (1950s to 1990s), with 1970s to 1990s commercials in its breaks. It's in the directory with its description and a SCHEDULE page, and shows in the guide, the quick channel list, favorites, reminders and the Channel Color theme like every other channel.
